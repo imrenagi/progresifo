@@ -24,6 +24,23 @@ describe("PianoKeyboard", () => {
     );
   });
 
+  it("shows only middle C as a visible key reference", () => {
+    render(
+      <PianoKeyboard
+        activeMidiNumbers={[]}
+        onNoteDown={vi.fn()}
+        onNoteUp={vi.fn()}
+        range={MOBILE_PIANO_RANGE}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "C4" })).toHaveTextContent(
+      "C4",
+    );
+    expect(screen.getByRole("button", { name: "C#4" })).toHaveTextContent("");
+    expect(screen.getByRole("button", { name: "D4" })).toHaveTextContent("");
+  });
+
   it("fires pointer note events for middle C", () => {
     const onNoteDown = vi.fn();
     const onNoteUp = vi.fn();

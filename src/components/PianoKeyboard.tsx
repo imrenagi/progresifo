@@ -163,6 +163,7 @@ export function PianoKeyboard({
 
   const renderKey = (key: PositionedPianoKey) => {
     const isActive = activeSet.has(key.midi);
+    const visibleLabel = key.name === "C4" ? key.name : null;
     const style = key.isBlack
       ? {
           left: `calc(((100% / ${whiteKeyCount}) * ${key.whiteIndex}) - ((100% / ${whiteKeyCount}) * ${BLACK_KEY_LEFT_OFFSET}))`,
@@ -187,7 +188,9 @@ export function PianoKeyboard({
         style={style}
         type="button"
       >
-        <span className="piano-key__label">{key.pitchClass}</span>
+        {visibleLabel ? (
+          <span className="piano-key__label">{visibleLabel}</span>
+        ) : null}
       </button>
     );
   };

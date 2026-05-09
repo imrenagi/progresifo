@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../../App";
@@ -47,6 +47,10 @@ vi.mock("../../midi/useMidiInput", () => ({
     };
   },
 }));
+
+function currentChordReadout() {
+  return within(screen.getByRole("region", { name: "Current chord" }));
+}
 
 describe("App", () => {
   beforeEach(() => {
@@ -161,7 +165,7 @@ describe("App", () => {
     fireEvent.pointerUp(c4, { pointerId: 1 });
 
     expect(mocks.triggerRelease).not.toHaveBeenCalled();
-    expect(screen.getByText("C4")).toBeInTheDocument();
+    expect(currentChordReadout().getByText("C4")).toBeInTheDocument();
 
     act(() => {
       mocks.midiCallbacks.onNoteOff?.({
@@ -239,14 +243,14 @@ describe("App", () => {
       });
     });
 
-    expect(screen.getByText("C4")).toBeInTheDocument();
+    expect(currentChordReadout().getByText("C4")).toBeInTheDocument();
     expect(mocks.triggerAttack).toHaveBeenLastCalledWith(60, 96);
 
     mocks.midiStatus = "disconnected";
     mocks.midiInputs = [];
     rerender(<App />);
 
-    expect(screen.queryByText("C4")).not.toBeInTheDocument();
+    expect(currentChordReadout().queryByText("C4")).not.toBeInTheDocument();
     expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
     expect(mocks.triggerRelease).toHaveBeenLastCalledWith(60);
   });
@@ -269,7 +273,7 @@ describe("App", () => {
     mocks.midiInputs = [];
     rerender(<App />);
 
-    expect(screen.getByText("C4")).toBeInTheDocument();
+    expect(currentChordReadout().getByText("C4")).toBeInTheDocument();
     expect(mocks.triggerRelease).not.toHaveBeenCalled();
   });
 
@@ -292,20 +296,20 @@ describe("App", () => {
       });
     });
 
-    expect(screen.getByText("C4")).toBeInTheDocument();
+    expect(currentChordReadout().getByText("C4")).toBeInTheDocument();
 
     mocks.midiStatus = "connected";
     mocks.midiInputs = [inputB];
     rerender(<App />);
 
-    expect(screen.getByText("C4")).toBeInTheDocument();
+    expect(currentChordReadout().getByText("C4")).toBeInTheDocument();
     expect(mocks.triggerRelease).not.toHaveBeenCalled();
 
     mocks.midiStatus = "disconnected";
     mocks.midiInputs = [];
     rerender(<App />);
 
-    expect(screen.queryByText("C4")).not.toBeInTheDocument();
+    expect(currentChordReadout().queryByText("C4")).not.toBeInTheDocument();
     expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
     expect(mocks.triggerRelease).toHaveBeenLastCalledWith(60);
   });
@@ -328,7 +332,7 @@ describe("App", () => {
     mocks.midiInputs = [inputB];
     rerender(<App />);
 
-    expect(screen.queryByText("C4")).not.toBeInTheDocument();
+    expect(currentChordReadout().queryByText("C4")).not.toBeInTheDocument();
     expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
     expect(mocks.triggerRelease).toHaveBeenLastCalledWith(60);
   });
