@@ -147,9 +147,10 @@ eight chord names, to avoid noisy growth.
 
 Use the Stitch design direction:
 
-- Calm practice-workspace feel, not a marketing page.
-- Off-white background, charcoal text, white piano keys, graphite black keys,
-  teal active-note highlights, amber chord emphasis, muted red for errors.
+- Calm dark studio-workspace feel, not a marketing page.
+- Deep charcoal background, soft near-white text, ivory piano key surfaces,
+  graphite black keys, teal active-note highlights, amber chord emphasis, and
+  muted red for errors.
 - Tight, readable UI with 6-8px radii for panels and buttons.
 - Immediate key press feedback with subtle brightness or scale changes.
 - No decorative hero, nested cards, or purely ornamental gradients.
