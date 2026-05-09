@@ -146,4 +146,52 @@ describe("useMidiInput", () => {
       },
     });
   });
+
+  it("reports only connected inputs when access contains disconnected ports", async () => {
+    const connectedInput = createInput({
+      id: "connected-input",
+      name: "Connected Keys",
+      state: "connected",
+    });
+    const disconnectedInput = createInput({
+      id: "disconnected-input",
+      name: "Disconnected Keys",
+      state: "disconnected",
+    });
+    const access = createAccess([connectedInput, disconnectedInput]);
+    installMidiAccess(access);
+    const { result } = renderHook(() => useMidiInput());
+
+    await act(async () => {
+      await result.current.connect();
+    });
+
+    expect(result.current.status).toBe("connected");
+    expect(result.current.inputs).toEqual([
+      {
+        id: "connected-input",
+        name: "Connected Keys",
+        manufacturer: "Acme",
+      },
+    ]);
+    expect(connectedInput.onmidimessage).toEqual(expect.any(Function));
+    expect(disconnectedInput.onmidimessage).toEqual(expect.any(Function));
+  });
+
+  it("reports disconnected with no inputs when all access ports are disconnected", async () => {
+    const disconnectedInput = createInput({
+      state: "disconnected",
+    });
+    const access = createAccess([disconnectedInput]);
+    installMidiAccess(access);
+    const { result } = renderHook(() => useMidiInput());
+
+    await act(async () => {
+      await result.current.connect();
+    });
+
+    expect(result.current.status).toBe("disconnected");
+    expect(result.current.inputs).toEqual([]);
+    expect(disconnectedInput.onmidimessage).toEqual(expect.any(Function));
+  });
 });

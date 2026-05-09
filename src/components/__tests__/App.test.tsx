@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   enableAudio: vi.fn(),
   triggerAttack: vi.fn(),
   triggerRelease: vi.fn(),
+  midiStatus: "connected",
+  midiInputs: [{ id: "test-input", name: "Test MIDI", manufacturer: "Test" }],
   midiCallbacks: {} as {
     onNoteOn?: (event: { note: number; velocity?: number }) => void;
     onNoteOff?: (event: { note: number }) => void;
@@ -31,8 +33,8 @@ vi.mock("../../midi/useMidiInput", () => ({
     mocks.midiCallbacks.onNoteOff = options.onNoteOff;
 
     return {
-      status: "connected",
-      inputs: [{ id: "test-input", name: "Test MIDI", manufacturer: "Test" }],
+      status: mocks.midiStatus,
+      inputs: mocks.midiInputs,
       error: null,
       connect: mocks.connectMidi,
     };
@@ -46,6 +48,10 @@ describe("App", () => {
     mocks.enableAudio.mockClear();
     mocks.triggerAttack.mockClear();
     mocks.triggerRelease.mockClear();
+    mocks.midiStatus = "connected";
+    mocks.midiInputs = [
+      { id: "test-input", name: "Test MIDI", manufacturer: "Test" },
+    ];
     mocks.midiCallbacks.onNoteOn = undefined;
     mocks.midiCallbacks.onNoteOff = undefined;
   });
@@ -135,5 +141,42 @@ describe("App", () => {
 
     expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
     expect(mocks.triggerRelease).toHaveBeenLastCalledWith(60);
+  });
+
+  it("clears MIDI notes and releases synth audio when MIDI disconnects", () => {
+    const { rerender } = render(<App />);
+
+    act(() => {
+      mocks.midiCallbacks.onNoteOn?.({ note: 60, velocity: 96 });
+    });
+
+    expect(screen.getByText("C4")).toBeInTheDocument();
+    expect(mocks.triggerAttack).toHaveBeenLastCalledWith(60, 96);
+
+    mocks.midiStatus = "disconnected";
+    mocks.midiInputs = [];
+    rerender(<App />);
+
+    expect(screen.queryByText("C4")).not.toBeInTheDocument();
+    expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
+    expect(mocks.triggerRelease).toHaveBeenLastCalledWith(60);
+  });
+
+  it("clears MIDI ownership without releasing audio when pointer still holds the note", () => {
+    const { rerender } = render(<App />);
+
+    const c4 = screen.getByRole("button", { name: "C4" });
+    fireEvent.pointerDown(c4, { pointerId: 1 });
+
+    act(() => {
+      mocks.midiCallbacks.onNoteOn?.({ note: 60, velocity: 96 });
+    });
+
+    mocks.midiStatus = "disconnected";
+    mocks.midiInputs = [];
+    rerender(<App />);
+
+    expect(screen.getByText("C4")).toBeInTheDocument();
+    expect(mocks.triggerRelease).not.toHaveBeenCalled();
   });
 });

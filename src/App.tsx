@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useToneSynth } from "./audio/useToneSynth";
 import { ChordReadout } from "./components/ChordReadout";
@@ -10,6 +10,7 @@ import {
   addActiveNote,
   getDisplayNotes,
   getUniqueMidiNumbers,
+  removeAllNotesForSource,
   removeActiveNote,
 } from "./music/activeNotes";
 import { detectChord } from "./music/chords";
@@ -99,6 +100,7 @@ export default function App() {
     [handleNoteDown, handleNoteUp],
   );
   const midi = useMidiInput(midiOptions);
+  const previousMidiStatusRef = useRef(midi.status);
 
   const activeMidiNumbers = useMemo(
     () => getUniqueMidiNumbers(activeNotes),
@@ -133,6 +135,48 @@ export default function App() {
       addChordToProgression(current, detection.primary, Date.now()),
     );
   }, [detection.primary]);
+
+  useEffect(() => {
+    const previousStatus = previousMidiStatusRef.current;
+    previousMidiStatusRef.current = midi.status;
+
+    if (previousStatus !== "connected" || midi.status === "connected") {
+      return;
+    }
+
+    const notesToRelease: number[] = [];
+
+    flushSync(() => {
+      setActiveNotes((current) => {
+        const midiNotes = current.filter((note) => note.source === "midi");
+
+        if (midiNotes.length === 0) {
+          return current;
+        }
+
+        const nextActiveNotes = removeAllNotesForSource(current, "midi");
+
+        midiNotes.forEach((midiNote) => {
+          const hasRemainingOwner = nextActiveNotes.some(
+            (note) => note.midi === midiNote.midi,
+          );
+
+          if (
+            !hasRemainingOwner &&
+            !notesToRelease.includes(midiNote.midi)
+          ) {
+            notesToRelease.push(midiNote.midi);
+          }
+        });
+
+        return nextActiveNotes;
+      });
+    });
+
+    notesToRelease.forEach((midi) => {
+      triggerRelease(midi);
+    });
+  }, [midi.status, triggerRelease]);
 
   return (
     <main className="app-shell">

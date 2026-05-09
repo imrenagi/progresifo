@@ -63,10 +63,12 @@ function getInputs(access: MIDIAccess): MIDIInput[] {
   return Array.from(access.inputs.values());
 }
 
+function getConnectedInputs(access: MIDIAccess): MIDIInput[] {
+  return getInputs(access).filter((input) => input.state === "connected");
+}
+
 function getStatusForInputs(inputs: MIDIInput[]): MidiStatus {
-  return inputs.some((input) => input.state === "connected")
-    ? "connected"
-    : "disconnected";
+  return inputs.length > 0 ? "connected" : "disconnected";
 }
 
 export function useMidiInput(
@@ -89,7 +91,7 @@ export function useMidiInput(
   }, [options]);
 
   const syncInputs = useCallback((access: MIDIAccess) => {
-    const nextInputs = getInputs(access);
+    const nextInputs = getConnectedInputs(access);
     setInputs(nextInputs.map(summarizeInput));
     setStatus(getStatusForInputs(nextInputs));
   }, []);
