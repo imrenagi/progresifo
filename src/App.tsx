@@ -64,8 +64,18 @@ export default function App() {
 
   const handleNoteUp = useCallback(
     (midi: number, source: ActiveNoteSource) => {
-      setActiveNotes((current) => removeActiveNote(current, midi, source));
-      triggerRelease(midi);
+      setActiveNotes((current) => {
+        const nextActiveNotes = removeActiveNote(current, midi, source);
+        const hasRemainingOwner = nextActiveNotes.some(
+          (note) => note.midi === midi,
+        );
+
+        if (!hasRemainingOwner) {
+          triggerRelease(midi);
+        }
+
+        return nextActiveNotes;
+      });
     },
     [triggerRelease],
   );
