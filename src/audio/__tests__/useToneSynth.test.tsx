@@ -2,6 +2,12 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useToneSynth } from "../useToneSynth";
 
+type Deferred<T> = {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (reason?: unknown) => void;
+};
+
 const start = vi.fn<() => Promise<void>>();
 const toDestination = vi.fn();
 const triggerAttack = vi.fn();
@@ -17,8 +23,21 @@ vi.mock("tone", () => ({
   PolySynth,
 }));
 
+function createDeferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+
+  return { promise, resolve, reject };
+}
+
 beforeEach(() => {
+  start.mockReset();
   start.mockResolvedValue();
+  toDestination.mockClear();
   toDestination.mockReturnThis();
   triggerAttack.mockClear();
   triggerRelease.mockClear();
@@ -83,7 +102,7 @@ describe("useToneSynth", () => {
     expect(triggerRelease).toHaveBeenCalledWith("C4");
   });
 
-  it("releases notes and returns to off when disabled", async () => {
+  it("disposes and clears the current synth when disabled", async () => {
     const { result } = renderHook(() => useToneSynth());
 
     await act(async () => {
@@ -97,8 +116,16 @@ describe("useToneSynth", () => {
     });
 
     expect(releaseAll).toHaveBeenCalledTimes(1);
+    expect(dispose).toHaveBeenCalledTimes(1);
     expect(triggerRelease).not.toHaveBeenCalled();
     expect(result.current.status).toBe("off");
+
+    await act(async () => {
+      await result.current.enable();
+    });
+
+    expect(PolySynth).toHaveBeenCalledTimes(2);
+    expect(dispose).toHaveBeenCalledTimes(1);
   });
 
   it("sets error status when enabling fails", async () => {
@@ -113,22 +140,63 @@ describe("useToneSynth", () => {
     expect(PolySynth).not.toHaveBeenCalled();
   });
 
-  it("disposes the previous synth before re-enabling", async () => {
+  it("returns the in-flight startup promise for concurrent enable calls", async () => {
+    const deferred = createDeferred<void>();
+    start.mockReturnValueOnce(deferred.promise);
+    const { result } = renderHook(() => useToneSynth());
+    let firstResolved = false;
+    let secondResolved = false;
+    let firstEnable!: Promise<void>;
+    let secondEnable!: Promise<void>;
+
+    act(() => {
+      firstEnable = result.current.enable().then(() => {
+        firstResolved = true;
+      });
+      secondEnable = result.current.enable().then(() => {
+        secondResolved = true;
+      });
+    });
+
+    await vi.waitFor(() => {
+      expect(start).toHaveBeenCalledTimes(1);
+    });
+
+    expect(firstResolved).toBe(false);
+    expect(secondResolved).toBe(false);
+    expect(PolySynth).not.toHaveBeenCalled();
+
+    await act(async () => {
+      deferred.resolve();
+      await firstEnable;
+      await secondEnable;
+    });
+
+    expect(firstResolved).toBe(true);
+    expect(secondResolved).toBe(true);
+    expect(PolySynth).toHaveBeenCalledTimes(1);
+    expect(result.current.status).toBe("on");
+  });
+
+  it("tracks duplicate attacks by normalized note name", async () => {
     const { result } = renderHook(() => useToneSynth());
 
     await act(async () => {
       await result.current.enable();
     });
+
     act(() => {
-      result.current.disable();
-    });
-    await act(async () => {
-      await result.current.enable();
+      result.current.triggerAttack(60.2, 64);
+      result.current.triggerAttack(60.4, 100);
+      result.current.triggerRelease(60.4);
+      result.current.triggerAttack(60.4, 100);
     });
 
-    expect(dispose).toHaveBeenCalledTimes(1);
-    expect(PolySynth).toHaveBeenCalledTimes(2);
-    expect(result.current.status).toBe("on");
+    expect(triggerAttack).toHaveBeenCalledTimes(2);
+    expect(triggerAttack).toHaveBeenNthCalledWith(1, "C4", undefined, 64 / 127);
+    expect(triggerAttack).toHaveBeenNthCalledWith(2, "C4", undefined, 100 / 127);
+    expect(triggerRelease).toHaveBeenCalledTimes(1);
+    expect(triggerRelease).toHaveBeenCalledWith("C4");
   });
 
   it("disposes the synth on cleanup", async () => {

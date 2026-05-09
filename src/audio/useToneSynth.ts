@@ -77,9 +77,10 @@ function midiToNoteName(midi: number): string {
 export function useToneSynth(): UseToneSynthResult {
   const isMountedRef = useRef(false);
   const requestIdRef = useRef(0);
+  const startupPromiseRef = useRef<Promise<void> | null>(null);
   const statusRef = useRef<AudioStatus>("off");
   const synthRef = useRef<TonePolySynth | null>(null);
-  const soundingNotesRef = useRef<Set<number>>(new Set());
+  const soundingNotesRef = useRef<Set<string>>(new Set());
   const [status, setStatusState] = useState<AudioStatus>("off");
 
   const setStatus = useCallback((nextStatus: AudioStatus) => {
@@ -97,55 +98,74 @@ export function useToneSynth(): UseToneSynthResult {
     soundingNotesRef.current.clear();
   }, []);
 
-  const enable = useCallback(async () => {
-    if (statusRef.current === "on" || statusRef.current === "starting") {
-      return;
+  const enable = useCallback(() => {
+    if (statusRef.current === "on") {
+      return Promise.resolve();
+    }
+
+    if (statusRef.current === "starting" && startupPromiseRef.current) {
+      return startupPromiseRef.current;
     }
 
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     setStatus("starting");
 
-    try {
-      const tone = (await import("tone")) as ToneModule;
-      await tone.start();
+    let startupPromise!: Promise<void>;
+    startupPromise = (async () => {
+      try {
+        const tone = (await import("tone")) as ToneModule;
+        await tone.start();
 
-      if (!isMountedRef.current || requestId !== requestIdRef.current) {
-        return;
+        if (!isMountedRef.current || requestId !== requestIdRef.current) {
+          return;
+        }
+
+        cleanupSynth();
+        const synth = new tone.PolySynth(
+          tone.Synth,
+          synthOptions,
+        ).toDestination();
+        synthRef.current = synth;
+        setStatus("on");
+      } catch {
+        if (!isMountedRef.current || requestId !== requestIdRef.current) {
+          return;
+        }
+
+        cleanupSynth();
+        setStatus("error");
+      } finally {
+        if (startupPromiseRef.current === startupPromise) {
+          startupPromiseRef.current = null;
+        }
       }
+    })();
 
-      cleanupSynth();
-      const synth = new tone.PolySynth(tone.Synth, synthOptions).toDestination();
-      synthRef.current = synth;
-      setStatus("on");
-    } catch {
-      if (!isMountedRef.current || requestId !== requestIdRef.current) {
-        return;
-      }
-
-      cleanupSynth();
-      setStatus("error");
-    }
+    startupPromiseRef.current = startupPromise;
+    return startupPromise;
   }, [cleanupSynth, setStatus]);
 
   const disable = useCallback(() => {
     requestIdRef.current += 1;
-    synthRef.current?.releaseAll();
-    soundingNotesRef.current.clear();
+    startupPromiseRef.current = null;
+    cleanupSynth();
     setStatus("off");
-  }, [setStatus]);
+  }, [cleanupSynth, setStatus]);
 
   const triggerAttack = useCallback((midi: number, velocity = 100) => {
+    const noteName = midiToNoteName(midi);
+
     if (
       statusRef.current !== "on" ||
-      soundingNotesRef.current.has(midi) ||
+      soundingNotesRef.current.has(noteName) ||
       !synthRef.current
     ) {
       return;
     }
 
-    soundingNotesRef.current.add(midi);
-    synthRef.current.triggerAttack(midiToNoteName(midi), undefined, velocity / 127);
+    soundingNotesRef.current.add(noteName);
+    synthRef.current.triggerAttack(noteName, undefined, velocity / 127);
   }, []);
 
   const triggerRelease = useCallback((midi: number) => {
@@ -153,8 +173,10 @@ export function useToneSynth(): UseToneSynthResult {
       return;
     }
 
-    soundingNotesRef.current.delete(midi);
-    synthRef.current.triggerRelease(midiToNoteName(midi));
+    const noteName = midiToNoteName(midi);
+
+    soundingNotesRef.current.delete(noteName);
+    synthRef.current.triggerRelease(noteName);
   }, []);
 
   useEffect(() => {
@@ -163,6 +185,7 @@ export function useToneSynth(): UseToneSynthResult {
     return () => {
       isMountedRef.current = false;
       requestIdRef.current += 1;
+      startupPromiseRef.current = null;
       cleanupSynth();
       statusRef.current = "off";
     };
