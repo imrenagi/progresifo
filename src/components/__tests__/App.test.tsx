@@ -12,8 +12,15 @@ const mocks = vi.hoisted(() => ({
   midiStatus: "connected",
   midiInputs: [{ id: "test-input", name: "Test MIDI", manufacturer: "Test" }],
   midiCallbacks: {} as {
-    onNoteOn?: (event: { note: number; velocity?: number }) => void;
-    onNoteOff?: (event: { note: number }) => void;
+    onNoteOn?: (event: {
+      note: number;
+      velocity?: number;
+      input: { id: string; name: string; manufacturer: string };
+    }) => void;
+    onNoteOff?: (event: {
+      note: number;
+      input: { id: string; name: string; manufacturer: string };
+    }) => void;
   },
 }));
 
@@ -83,7 +90,11 @@ describe("App", () => {
     expect(mocks.triggerAttack).toHaveBeenLastCalledWith(60, 100);
 
     act(() => {
-      mocks.midiCallbacks.onNoteOn?.({ note: 60, velocity: 96 });
+      mocks.midiCallbacks.onNoteOn?.({
+        note: 60,
+        velocity: 96,
+        input: { id: "test-input", name: "Test MIDI", manufacturer: "Test" },
+      });
     });
 
     expect(mocks.triggerAttack).toHaveBeenCalledTimes(2);
@@ -95,7 +106,10 @@ describe("App", () => {
     expect(screen.getByText("C4")).toBeInTheDocument();
 
     act(() => {
-      mocks.midiCallbacks.onNoteOff?.({ note: 60 });
+      mocks.midiCallbacks.onNoteOff?.({
+        note: 60,
+        input: { id: "test-input", name: "Test MIDI", manufacturer: "Test" },
+      });
     });
 
     expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
@@ -106,7 +120,10 @@ describe("App", () => {
     render(<App />);
 
     act(() => {
-      mocks.midiCallbacks.onNoteOff?.({ note: 60 });
+      mocks.midiCallbacks.onNoteOff?.({
+        note: 60,
+        input: { id: "test-input", name: "Test MIDI", manufacturer: "Test" },
+      });
     });
 
     expect(mocks.triggerRelease).not.toHaveBeenCalled();
@@ -131,12 +148,22 @@ describe("App", () => {
     render(<App />);
 
     act(() => {
-      mocks.midiCallbacks.onNoteOn?.({ note: 60, velocity: 96 });
+      mocks.midiCallbacks.onNoteOn?.({
+        note: 60,
+        velocity: 96,
+        input: { id: "test-input", name: "Test MIDI", manufacturer: "Test" },
+      });
     });
 
     act(() => {
-      mocks.midiCallbacks.onNoteOff?.({ note: 60 });
-      mocks.midiCallbacks.onNoteOff?.({ note: 60 });
+      mocks.midiCallbacks.onNoteOff?.({
+        note: 60,
+        input: { id: "test-input", name: "Test MIDI", manufacturer: "Test" },
+      });
+      mocks.midiCallbacks.onNoteOff?.({
+        note: 60,
+        input: { id: "test-input", name: "Test MIDI", manufacturer: "Test" },
+      });
     });
 
     expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
@@ -147,7 +174,11 @@ describe("App", () => {
     const { rerender } = render(<App />);
 
     act(() => {
-      mocks.midiCallbacks.onNoteOn?.({ note: 60, velocity: 96 });
+      mocks.midiCallbacks.onNoteOn?.({
+        note: 60,
+        velocity: 96,
+        input: { id: "test-input", name: "Test MIDI", manufacturer: "Test" },
+      });
     });
 
     expect(screen.getByText("C4")).toBeInTheDocument();
@@ -169,7 +200,11 @@ describe("App", () => {
     fireEvent.pointerDown(c4, { pointerId: 1 });
 
     act(() => {
-      mocks.midiCallbacks.onNoteOn?.({ note: 60, velocity: 96 });
+      mocks.midiCallbacks.onNoteOn?.({
+        note: 60,
+        velocity: 96,
+        input: { id: "test-input", name: "Test MIDI", manufacturer: "Test" },
+      });
     });
 
     mocks.midiStatus = "disconnected";
@@ -178,5 +213,65 @@ describe("App", () => {
 
     expect(screen.getByText("C4")).toBeInTheDocument();
     expect(mocks.triggerRelease).not.toHaveBeenCalled();
+  });
+
+  it("keeps audio active until the final MIDI input holding a shared note disconnects", () => {
+    const inputA = { id: "input-a", name: "Input A", manufacturer: "Test" };
+    const inputB = { id: "input-b", name: "Input B", manufacturer: "Test" };
+    mocks.midiInputs = [inputA, inputB];
+    const { rerender } = render(<App />);
+
+    act(() => {
+      mocks.midiCallbacks.onNoteOn?.({
+        note: 60,
+        velocity: 96,
+        input: inputA,
+      });
+      mocks.midiCallbacks.onNoteOn?.({
+        note: 60,
+        velocity: 100,
+        input: inputB,
+      });
+    });
+
+    expect(screen.getByText("C4")).toBeInTheDocument();
+
+    mocks.midiStatus = "connected";
+    mocks.midiInputs = [inputB];
+    rerender(<App />);
+
+    expect(screen.getByText("C4")).toBeInTheDocument();
+    expect(mocks.triggerRelease).not.toHaveBeenCalled();
+
+    mocks.midiStatus = "disconnected";
+    mocks.midiInputs = [];
+    rerender(<App />);
+
+    expect(screen.queryByText("C4")).not.toBeInTheDocument();
+    expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
+    expect(mocks.triggerRelease).toHaveBeenLastCalledWith(60);
+  });
+
+  it("clears a note owned only by a removed MIDI input while another input remains connected", () => {
+    const inputA = { id: "input-a", name: "Input A", manufacturer: "Test" };
+    const inputB = { id: "input-b", name: "Input B", manufacturer: "Test" };
+    mocks.midiInputs = [inputA, inputB];
+    const { rerender } = render(<App />);
+
+    act(() => {
+      mocks.midiCallbacks.onNoteOn?.({
+        note: 60,
+        velocity: 96,
+        input: inputA,
+      });
+    });
+
+    mocks.midiStatus = "connected";
+    mocks.midiInputs = [inputB];
+    rerender(<App />);
+
+    expect(screen.queryByText("C4")).not.toBeInTheDocument();
+    expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
+    expect(mocks.triggerRelease).toHaveBeenLastCalledWith(60);
   });
 });

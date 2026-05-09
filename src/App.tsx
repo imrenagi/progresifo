@@ -6,6 +6,7 @@ import { PianoKeyboard } from "./components/PianoKeyboard";
 import { ProgressionTrail } from "./components/ProgressionTrail";
 import { StatusBar } from "./components/StatusBar";
 import { useMidiInput } from "./midi/useMidiInput";
+import type { MidiNoteEvent } from "./midi/useMidiInput";
 import {
   addActiveNote,
   getDisplayNotes,
@@ -50,11 +51,17 @@ export default function App() {
   } = synth;
 
   const handleNoteDown = useCallback(
-    (midi: number, source: ActiveNoteSource, velocity = 100) => {
+    (
+      midi: number,
+      source: ActiveNoteSource,
+      velocity = 100,
+      ownerId?: string,
+    ) => {
       setActiveNotes((current) =>
         addActiveNote(current, {
           midi,
           source,
+          ownerId,
           velocity,
           startedAt: Date.now(),
         }),
@@ -65,20 +72,23 @@ export default function App() {
   );
 
   const handleNoteUp = useCallback(
-    (midi: number, source: ActiveNoteSource) => {
+    (midi: number, source: ActiveNoteSource, ownerId?: string) => {
       let shouldReleaseAudio = false;
 
       flushSync(() => {
         setActiveNotes((current) => {
-          const sourceOwnsNote = current.some(
-            (note) => note.midi === midi && note.source === source,
+          const nextActiveNotes = removeActiveNote(
+            current,
+            midi,
+            source,
+            ownerId,
           );
-          const nextActiveNotes = removeActiveNote(current, midi, source);
           const hasRemainingOwner = nextActiveNotes.some(
             (note) => note.midi === midi,
           );
 
-          shouldReleaseAudio = sourceOwnsNote && !hasRemainingOwner;
+          shouldReleaseAudio =
+            nextActiveNotes.length < current.length && !hasRemainingOwner;
 
           return nextActiveNotes;
         });
@@ -93,14 +103,20 @@ export default function App() {
 
   const midiOptions = useMemo(
     () => ({
-      onNoteOn: (event: { note: number; velocity?: number }) =>
-        handleNoteDown(event.note, "midi", event.velocity),
-      onNoteOff: (event: { note: number }) => handleNoteUp(event.note, "midi"),
+      onNoteOn: (event: MidiNoteEvent) =>
+        handleNoteDown(event.note, "midi", event.velocity, event.input.id),
+      onNoteOff: (event: MidiNoteEvent) =>
+        handleNoteUp(event.note, "midi", event.input.id),
     }),
     [handleNoteDown, handleNoteUp],
   );
   const midi = useMidiInput(midiOptions);
   const previousMidiStatusRef = useRef(midi.status);
+  const midiInputIds = useMemo(
+    () => midi.inputs.map((input) => input.id),
+    [midi.inputs],
+  );
+  const previousMidiInputIdsRef = useRef(midiInputIds);
 
   const activeMidiNumbers = useMemo(
     () => getUniqueMidiNumbers(activeNotes),
@@ -138,9 +154,18 @@ export default function App() {
 
   useEffect(() => {
     const previousStatus = previousMidiStatusRef.current;
-    previousMidiStatusRef.current = midi.status;
+    const previousMidiInputIds = previousMidiInputIdsRef.current;
+    const currentMidiInputIds = new Set(midiInputIds);
+    const removedMidiInputIds = previousMidiInputIds.filter(
+      (inputId) => !currentMidiInputIds.has(inputId),
+    );
+    const removeAllMidiNotes =
+      previousStatus === "connected" && midi.status !== "connected";
 
-    if (previousStatus !== "connected" || midi.status === "connected") {
+    previousMidiStatusRef.current = midi.status;
+    previousMidiInputIdsRef.current = midiInputIds;
+
+    if (!removeAllMidiNotes && removedMidiInputIds.length === 0) {
       return;
     }
 
@@ -148,13 +173,25 @@ export default function App() {
 
     flushSync(() => {
       setActiveNotes((current) => {
-        const midiNotes = current.filter((note) => note.source === "midi");
+        const midiNotes = current.filter(
+          (note) =>
+            note.source === "midi" &&
+            (removeAllMidiNotes ||
+              (note.ownerId !== undefined &&
+                removedMidiInputIds.includes(note.ownerId))),
+        );
 
         if (midiNotes.length === 0) {
           return current;
         }
 
-        const nextActiveNotes = removeAllNotesForSource(current, "midi");
+        const nextActiveNotes = removeAllMidiNotes
+          ? removeAllNotesForSource(current, "midi")
+          : removedMidiInputIds.reduce(
+              (notes, inputId) =>
+                removeAllNotesForSource(notes, "midi", inputId),
+              current,
+            );
 
         midiNotes.forEach((midiNote) => {
           const hasRemainingOwner = nextActiveNotes.some(
@@ -176,7 +213,7 @@ export default function App() {
     notesToRelease.forEach((midi) => {
       triggerRelease(midi);
     });
-  }, [midi.status, triggerRelease]);
+  }, [midi.status, midiInputIds, triggerRelease]);
 
   return (
     <main className="app-shell">

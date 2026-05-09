@@ -6,6 +6,7 @@ export type ActiveNote = {
   name: string;
   pitchClass: string;
   source: ActiveNoteSource;
+  ownerId?: string;
   velocity?: number;
   startedAt: number;
 };

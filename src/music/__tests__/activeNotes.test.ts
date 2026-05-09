@@ -31,18 +31,56 @@ describe("activeNotes", () => {
     const first = addActiveNote([], {
       midi: 64,
       source: "midi",
+      ownerId: "input-a",
       velocity: 80,
       startedAt: 20,
     });
     const second = addActiveNote(first, {
       midi: 64,
       source: "midi",
+      ownerId: "input-a",
       velocity: 100,
       startedAt: 25,
     });
 
     expect(second).toHaveLength(1);
     expect(second[0]).toMatchObject({ velocity: 100, startedAt: 25 });
+  });
+
+  it("keeps matching MIDI notes from different input ids independently owned", () => {
+    const firstInput = addActiveNote([], {
+      midi: 60,
+      source: "midi",
+      ownerId: "input-a",
+      velocity: 80,
+      startedAt: 20,
+    });
+    const bothInputs = addActiveNote(firstInput, {
+      midi: 60,
+      source: "midi",
+      ownerId: "input-b",
+      velocity: 100,
+      startedAt: 25,
+    });
+
+    expect(bothInputs).toHaveLength(2);
+    expect(bothInputs.map((note) => note.id)).toEqual([
+      "midi:input-a:60",
+      "midi:input-b:60",
+    ]);
+
+    const withoutFirstInput = removeAllNotesForSource(
+      bothInputs,
+      "midi",
+      "input-a",
+    );
+
+    expect(withoutFirstInput).toHaveLength(1);
+    expect(withoutFirstInput[0]).toMatchObject({
+      midi: 60,
+      source: "midi",
+      ownerId: "input-b",
+    });
   });
 
   it("deduplicates MIDI numbers and display names", () => {
