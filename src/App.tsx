@@ -42,6 +42,19 @@ function getResponsiveRange(): PianoRange {
     : FULL_PIANO_RANGE;
 }
 
+function isEditableKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return (
+    target.isContentEditable ||
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  );
+}
+
 export default function App() {
   const [activeNotes, setActiveNotes] = useState<ActiveNote[]>([]);
   const [interactionMode, setInteractionMode] =
@@ -108,6 +121,43 @@ export default function App() {
     [triggerRelease],
   );
 
+  const clearPointerNotes = useCallback(() => {
+    const notesToRelease: number[] = [];
+
+    flushSync(() => {
+      setActiveNotes((current) => {
+        const pointerNotes = current.filter(
+          (note) => note.source === "pointer",
+        );
+
+        if (pointerNotes.length === 0) {
+          return current;
+        }
+
+        const nextActiveNotes = removeAllNotesForSource(current, "pointer");
+
+        pointerNotes.forEach((pointerNote) => {
+          const hasRemainingOwner = nextActiveNotes.some(
+            (note) => note.midi === pointerNote.midi,
+          );
+
+          if (
+            !hasRemainingOwner &&
+            !notesToRelease.includes(pointerNote.midi)
+          ) {
+            notesToRelease.push(pointerNote.midi);
+          }
+        });
+
+        return nextActiveNotes;
+      });
+    });
+
+    notesToRelease.forEach((midi) => {
+      triggerRelease(midi);
+    });
+  }, [triggerRelease]);
+
   const midiOptions = useMemo(
     () => ({
       onNoteOn: (event: MidiNoteEvent) =>
@@ -164,6 +214,27 @@ export default function App() {
       addChordToProgression(current, detection.primary, Date.now()),
     );
   }, [detection.primary]);
+
+  useEffect(() => {
+    if (interactionMode !== "latch") {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== " " || isEditableKeyboardTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      clearPointerNotes();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [clearPointerNotes, interactionMode]);
 
   useEffect(() => {
     const previousStatus = previousMidiStatusRef.current;

@@ -109,6 +109,35 @@ describe("App", () => {
     expect(c4).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("clears latched mouse notes when Space is pressed", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Latch mode" }));
+
+    const c4 = screen.getByRole("button", { name: "C4" });
+    const e4 = screen.getByRole("button", { name: "E4" });
+    const g4 = screen.getByRole("button", { name: "G4" });
+
+    fireEvent.pointerDown(c4, { pointerId: 1 });
+    fireEvent.pointerUp(c4, { pointerId: 1 });
+    fireEvent.pointerDown(e4, { pointerId: 2 });
+    fireEvent.pointerUp(e4, { pointerId: 2 });
+    fireEvent.pointerDown(g4, { pointerId: 3 });
+    fireEvent.pointerUp(g4, { pointerId: 3 });
+
+    expect(screen.getByText("C4 E4 G4")).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: " " });
+
+    expect(screen.queryByText("C4 E4 G4")).not.toBeInTheDocument();
+    expect(c4).toHaveAttribute("aria-pressed", "false");
+    expect(e4).toHaveAttribute("aria-pressed", "false");
+    expect(g4).toHaveAttribute("aria-pressed", "false");
+    expect(mocks.triggerRelease).toHaveBeenCalledWith(60);
+    expect(mocks.triggerRelease).toHaveBeenCalledWith(64);
+    expect(mocks.triggerRelease).toHaveBeenCalledWith(67);
+  });
+
   it("releases synth audio only after the last source owner releases a note", () => {
     render(<App />);
 
