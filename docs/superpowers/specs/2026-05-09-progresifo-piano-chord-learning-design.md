@@ -70,7 +70,9 @@ The chord readout prioritizes the most useful learning information:
 1. Detected chord name, or `No chord` when fewer than three useful pitch classes
    are active.
 2. Pressed note names with octaves, such as `C4 E4 G4`.
-3. Pitch classes, such as `C E G`, when helpful for chord detection.
+3. Alternate chord names, shown as a compact secondary list when `tonal`
+   returns more than one candidate.
+4. Pitch classes, such as `C E G`, when helpful for chord detection.
 
 The piano keyboard should adapt its visible range by layout. Desktop and wide
 tablet layouts show the full piano keyboard. Mobile layouts show two octaves by
@@ -132,9 +134,10 @@ learning tool.
 
 The current chord is recalculated whenever the active note set changes.
 
-Use `tonal` chord detection and select the first candidate as the display name
-for v1. If multiple candidates are returned, show the primary candidate and keep
-the rest available in state for later UI expansion.
+Use `tonal` chord detection and select the first candidate as the primary
+display name for v1. If multiple candidates are returned, show the remaining
+candidates in a secondary side area labeled as alternate names. This keeps the
+main readout decisive while making it clear that chord names can be contextual.
 
 The progression trail records a chord when the detected chord changes from the
 previous non-empty chord. It should keep a bounded recent list, such as the last
