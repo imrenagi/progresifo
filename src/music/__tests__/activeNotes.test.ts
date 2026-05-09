@@ -3,8 +3,10 @@ import {
   addActiveNote,
   getDisplayNotes,
   getUniqueMidiNumbers,
+  removeAllNotesForSource,
   removeActiveNote,
 } from "../activeNotes";
+import type { ActiveNote } from "../types";
 
 describe("activeNotes", () => {
   it("adds and removes source-aware notes", () => {
@@ -52,5 +54,32 @@ describe("activeNotes", () => {
 
     expect(getUniqueMidiNumbers(active)).toEqual([60, 64]);
     expect(getDisplayNotes(active)).toEqual(["C4", "E4"]);
+  });
+
+  it("removes all notes for a source", () => {
+    const active = [60, 64, 67].reduce<ActiveNote[]>(
+      (notes, midi, index) =>
+        addActiveNote(
+          addActiveNote(notes, {
+            midi,
+            source: "pointer",
+            startedAt: index,
+          }),
+          {
+            midi,
+            source: "midi",
+            startedAt: index + 10,
+          },
+        ),
+      [],
+    );
+
+    const withoutMidi = removeAllNotesForSource(active, "midi");
+    const withoutPointer = removeAllNotesForSource(active, "pointer");
+
+    expect(withoutMidi).toHaveLength(3);
+    expect(withoutMidi.every((note) => note.source === "pointer")).toBe(true);
+    expect(withoutPointer).toHaveLength(3);
+    expect(withoutPointer.every((note) => note.source === "midi")).toBe(true);
   });
 });
