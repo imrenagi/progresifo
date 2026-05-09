@@ -60,8 +60,10 @@ The first screen is the working practice surface, not a landing page.
 
 The top area contains a compact app title, MIDI connection status, and a sound
 toggle. The central area contains the chord readout. The lower area contains a
-responsive piano keyboard. A narrow lower or side strip contains recent detected
-chords.
+responsive piano keyboard. On desktop layouts, the keyboard shows the full
+88-key piano range from A0 through C8. On mobile layouts, the keyboard shows a
+focused two-octave range with horizontal scrolling avoided where possible. A
+narrow lower or side strip contains recent detected chords.
 
 The chord readout prioritizes the most useful learning information:
 
@@ -70,9 +72,10 @@ The chord readout prioritizes the most useful learning information:
 2. Pressed note names with octaves, such as `C4 E4 G4`.
 3. Pitch classes, such as `C E G`, when helpful for chord detection.
 
-The piano keyboard should support at least two octaves in the first version,
-with a straightforward path to expand the range later. Middle C should be
-visible by default.
+The piano keyboard should adapt its visible range by layout. Desktop and wide
+tablet layouts show the full piano keyboard. Mobile layouts show two octaves by
+default so keys remain playable and legible. Middle C should be visible by
+default in every layout.
 
 ## Input Model
 
