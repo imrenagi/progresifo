@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../../App";
 
@@ -90,6 +91,31 @@ describe("App", () => {
     act(() => {
       mocks.midiCallbacks.onNoteOff?.({ note: 60 });
     });
+
+    expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
+    expect(mocks.triggerRelease).toHaveBeenLastCalledWith(60);
+  });
+
+  it("does not release synth audio when the source did not own the note", () => {
+    render(<App />);
+
+    act(() => {
+      mocks.midiCallbacks.onNoteOff?.({ note: 60 });
+    });
+
+    expect(mocks.triggerRelease).not.toHaveBeenCalled();
+  });
+
+  it("releases synth audio exactly once when the final source owner releases", () => {
+    render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+
+    const c4 = screen.getByRole("button", { name: "C4" });
+    fireEvent.pointerDown(c4, { pointerId: 1 });
+    fireEvent.pointerUp(c4, { pointerId: 1 });
 
     expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
     expect(mocks.triggerRelease).toHaveBeenLastCalledWith(60);

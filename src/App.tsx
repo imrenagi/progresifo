@@ -64,20 +64,20 @@ export default function App() {
 
   const handleNoteUp = useCallback(
     (midi: number, source: ActiveNoteSource) => {
-      setActiveNotes((current) => {
-        const nextActiveNotes = removeActiveNote(current, midi, source);
-        const hasRemainingOwner = nextActiveNotes.some(
-          (note) => note.midi === midi,
-        );
+      const sourceOwnsNote = activeNotes.some(
+        (note) => note.midi === midi && note.source === source,
+      );
+      const hasRemainingOwner = activeNotes.some(
+        (note) => note.midi === midi && note.source !== source,
+      );
 
-        if (!hasRemainingOwner) {
-          triggerRelease(midi);
-        }
+      setActiveNotes((current) => removeActiveNote(current, midi, source));
 
-        return nextActiveNotes;
-      });
+      if (sourceOwnsNote && !hasRemainingOwner) {
+        triggerRelease(midi);
+      }
     },
-    [triggerRelease],
+    [activeNotes, triggerRelease],
   );
 
   const midiOptions = useMemo(
