@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "commit": {
+      "source": "git@github.com:imrenagi/skills.git",
+      "sourceType": "git",
+      "skillPath": "skills/commit/SKILL.md",
+      "computedHash": "096bf3d84d16edc56c50043643c0741748caa6fa76a05c0f5b85dbf042668c87"
+    },
+    "design-system-architecture": {
+      "source": "git@github.com:imrenagi/skills.git",
+      "sourceType": "git",
+      "skillPath": "skills/design-system-architecture/SKILL.md",
+      "computedHash": "a16f52174389c80c97716b040840019f4eb66ff4a69b30a6e4b908a1bd9d2857"
+    },
+    "log-bug": {
+      "source": "git@github.com:imrenagi/skills.git",
+      "sourceType": "git",
+      "skillPath": "skills/log-bug/SKILL.md",
+      "computedHash": "4f18f93cbf09f181cde9851d25c62ff265ff595b7921da5f04afb7383dc9f756"
+    },
+    "recap-learning": {
+      "source": "git@github.com:imrenagi/skills.git",
+      "sourceType": "git",
+      "skillPath": "skills/recap-learning/SKILL.md",
+      "computedHash": "d12575e65909748cd9992f38bebf9f55bf76ac05c63e94fd0fc343431eb1c14e"
+    }
+  }
+}
