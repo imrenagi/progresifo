@@ -2,7 +2,7 @@ import { Chord } from "tonal";
 import type { ActiveNote, ChordDetection } from "./types";
 
 function getPitchClasses(activeNotes: ActiveNote[]): string[] {
-  return Array.from(new Set(activeNotes.map((note) => note.pitchClass))).sort();
+  return Array.from(new Set(activeNotes.map((note) => note.pitchClass)));
 }
 
 export function detectChord(activeNotes: ActiveNote[]): ChordDetection {

@@ -41,4 +41,32 @@ describe("chords", () => {
     expect(detection.candidates.length).toBeGreaterThanOrEqual(1);
     expect(detection.alternatives).toEqual(detection.candidates.slice(1));
   });
+
+  it("preserves played pitch order when detecting sixth chords", () => {
+    const active = [64, 68, 71, 73].reduce<ActiveNote[]>(
+      (notes, midi, index) =>
+        addActiveNote(notes, { midi, source: "midi", startedAt: index }),
+      [],
+    );
+
+    const detection = detectChord(active);
+
+    expect(detection.pitchClasses).toEqual(["E", "G#", "B", "C#"]);
+    expect(detection.primary).toBe("E6");
+    expect(detection.alternatives).toContain("C#m7/E");
+  });
+
+  it("keeps inversion pitch order for slash-context candidates", () => {
+    const active = [64, 67, 72].reduce<ActiveNote[]>(
+      (notes, midi, index) =>
+        addActiveNote(notes, { midi, source: "pointer", startedAt: index }),
+      [],
+    );
+
+    const detection = detectChord(active);
+
+    expect(detection.pitchClasses).toEqual(["E", "G", "C"]);
+    expect(detection.primary).toBe("Em#5");
+    expect(detection.alternatives).toContain("CM/E");
+  });
 });
