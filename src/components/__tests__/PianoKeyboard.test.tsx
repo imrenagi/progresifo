@@ -44,4 +44,72 @@ describe("PianoKeyboard", () => {
     expect(onNoteDown).toHaveBeenCalledWith(60);
     expect(onNoteUp).toHaveBeenCalledWith(60);
   });
+
+  it("does not release a pointer-held note on blur", () => {
+    const onNoteDown = vi.fn();
+    const onNoteUp = vi.fn();
+
+    render(
+      <PianoKeyboard
+        activeMidiNumbers={[]}
+        onNoteDown={onNoteDown}
+        onNoteUp={onNoteUp}
+        range={MOBILE_PIANO_RANGE}
+      />,
+    );
+
+    const c4 = screen.getByRole("button", { name: "C4" });
+    fireEvent.pointerDown(c4, { pointerId: 1 });
+    fireEvent.blur(c4);
+
+    expect(onNoteUp).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(c4);
+
+    expect(onNoteUp).toHaveBeenCalledTimes(1);
+    expect(onNoteUp).toHaveBeenCalledWith(60);
+  });
+
+  it("fires keyboard note events for middle C", () => {
+    const onNoteDown = vi.fn();
+    const onNoteUp = vi.fn();
+
+    render(
+      <PianoKeyboard
+        activeMidiNumbers={[]}
+        onNoteDown={onNoteDown}
+        onNoteUp={onNoteUp}
+        range={MOBILE_PIANO_RANGE}
+      />,
+    );
+
+    const c4 = screen.getByRole("button", { name: "C4" });
+    fireEvent.keyDown(c4, { key: " " });
+    fireEvent.keyUp(c4, { key: " " });
+
+    expect(onNoteDown).toHaveBeenCalledWith(60);
+    expect(onNoteUp).toHaveBeenCalledWith(60);
+  });
+
+  it("does not duplicate note down while a keyboard key repeats", () => {
+    const onNoteDown = vi.fn();
+    const onNoteUp = vi.fn();
+
+    render(
+      <PianoKeyboard
+        activeMidiNumbers={[]}
+        onNoteDown={onNoteDown}
+        onNoteUp={onNoteUp}
+        range={MOBILE_PIANO_RANGE}
+      />,
+    );
+
+    const c4 = screen.getByRole("button", { name: "C4" });
+    fireEvent.keyDown(c4, { key: "Enter" });
+    fireEvent.keyDown(c4, { key: "Enter", repeat: true });
+    fireEvent.keyUp(c4, { key: "Enter" });
+
+    expect(onNoteDown).toHaveBeenCalledTimes(1);
+    expect(onNoteUp).toHaveBeenCalledTimes(1);
+  });
 });

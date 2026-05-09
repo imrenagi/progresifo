@@ -1,4 +1,4 @@
-import type { CSSProperties, PointerEvent } from "react";
+import { useRef, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import { buildPianoKeys } from "../music/notes";
 import type { PianoKey, PianoRange } from "../music/types";
 
@@ -45,17 +45,102 @@ function capturePointer(event: PointerEvent<HTMLButtonElement>) {
   }
 }
 
+function isPlayableKeyboardKey(key: string): boolean {
+  return key === " " || key === "Enter";
+}
+
+function deleteHeldPointerForMidi(
+  heldPointerIds: Map<number, number>,
+  midi: number,
+): boolean {
+  for (const [pointerId, heldMidi] of heldPointerIds) {
+    if (heldMidi === midi) {
+      heldPointerIds.delete(pointerId);
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function PianoKeyboard({
   activeMidiNumbers,
   range,
   onNoteDown,
   onNoteUp,
 }: PianoKeyboardProps) {
+  const heldKeyboardMidiRef = useRef<Set<number>>(new Set());
+  const heldPointerIdsRef = useRef<Map<number, number>>(new Map());
   const keys = positionKeys(buildPianoKeys(range));
   const activeSet = new Set(activeMidiNumbers);
   const whiteKeys = keys.filter((key) => !key.isBlack);
   const blackKeys = keys.filter((key) => key.isBlack);
   const whiteKeyCount = whiteKeys.length;
+
+  const pressPointerNote = (
+    key: PositionedPianoKey,
+    event: PointerEvent<HTMLButtonElement>,
+  ) => {
+    capturePointer(event);
+
+    if (heldPointerIdsRef.current.get(event.pointerId) === key.midi) {
+      return;
+    }
+
+    heldPointerIdsRef.current.set(event.pointerId, key.midi);
+    onNoteDown(key.midi);
+  };
+
+  const releasePointerNote = (
+    key: PositionedPianoKey,
+    event: PointerEvent<HTMLButtonElement>,
+  ) => {
+    if (heldPointerIdsRef.current.get(event.pointerId) !== key.midi) {
+      if (!deleteHeldPointerForMidi(heldPointerIdsRef.current, key.midi)) {
+        return;
+      }
+    } else {
+      heldPointerIdsRef.current.delete(event.pointerId);
+    }
+
+    onNoteUp(key.midi);
+  };
+
+  const pressKeyboardNote = (
+    key: PositionedPianoKey,
+    event: KeyboardEvent<HTMLButtonElement>,
+  ) => {
+    if (!isPlayableKeyboardKey(event.key)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (heldKeyboardMidiRef.current.has(key.midi)) {
+      return;
+    }
+
+    heldKeyboardMidiRef.current.add(key.midi);
+    onNoteDown(key.midi);
+  };
+
+  const releaseKeyboardNote = (
+    key: PositionedPianoKey,
+    event: KeyboardEvent<HTMLButtonElement>,
+  ) => {
+    if (!isPlayableKeyboardKey(event.key)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (!heldKeyboardMidiRef.current.has(key.midi)) {
+      return;
+    }
+
+    heldKeyboardMidiRef.current.delete(key.midi);
+    onNoteUp(key.midi);
+  };
 
   const renderKey = (key: PositionedPianoKey) => {
     const isActive = activeSet.has(key.midi);
@@ -75,13 +160,11 @@ export function PianoKeyboard({
         }`}
         data-active={isActive}
         key={key.midi}
-        onBlur={() => onNoteUp(key.midi)}
-        onPointerCancel={() => onNoteUp(key.midi)}
-        onPointerDown={(event) => {
-          capturePointer(event);
-          onNoteDown(key.midi);
-        }}
-        onPointerUp={() => onNoteUp(key.midi)}
+        onKeyDown={(event) => pressKeyboardNote(key, event)}
+        onKeyUp={(event) => releaseKeyboardNote(key, event)}
+        onPointerCancel={(event) => releasePointerNote(key, event)}
+        onPointerDown={(event) => pressPointerNote(key, event)}
+        onPointerUp={(event) => releasePointerNote(key, event)}
         style={style}
         type="button"
       >
