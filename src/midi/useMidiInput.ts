@@ -32,6 +32,18 @@ type UseMidiInputResult = {
   connect: () => Promise<void>;
 };
 
+type InstalledMidiMessageHandler = {
+  input: MIDIInput;
+  handler: MIDIInput["onmidimessage"];
+  previous: MIDIInput["onmidimessage"];
+};
+
+type InstalledStateChangeHandler = {
+  access: MIDIAccess;
+  handler: MIDIAccess["onstatechange"];
+  previous: MIDIAccess["onstatechange"];
+};
+
 function supportsMidi(): boolean {
   return (
     typeof navigator !== "undefined" &&
@@ -62,6 +74,10 @@ export function useMidiInput(
 ): UseMidiInputResult {
   const callbacksRef = useRef(options);
   const accessRef = useRef<MIDIAccess | null>(null);
+  const isMountedRef = useRef(false);
+  const requestIdRef = useRef(0);
+  const midiHandlersRef = useRef<InstalledMidiMessageHandler[]>([]);
+  const stateHandlerRef = useRef<InstalledStateChangeHandler | null>(null);
   const [status, setStatus] = useState<MidiStatus>(() =>
     supportsMidi() ? "permission-needed" : "unsupported",
   );
@@ -78,17 +94,31 @@ export function useMidiInput(
     setStatus(getStatusForInputs(nextInputs));
   }, []);
 
-  const detachListeners = useCallback((access: MIDIAccess) => {
-    access.onstatechange = null;
-    getInputs(access).forEach((input) => {
-      input.onmidimessage = null;
+  const detachInstalledHandlers = useCallback(() => {
+    const stateHandler = stateHandlerRef.current;
+    if (
+      stateHandler &&
+      stateHandler.access.onstatechange === stateHandler.handler
+    ) {
+      stateHandler.access.onstatechange = stateHandler.previous;
+    }
+    stateHandlerRef.current = null;
+
+    midiHandlersRef.current.forEach(({ input, handler, previous }) => {
+      if (input.onmidimessage === handler) {
+        input.onmidimessage = previous;
+      }
     });
+    midiHandlersRef.current = [];
   }, []);
 
   const attachListeners = useCallback(
     (access: MIDIAccess) => {
+      detachInstalledHandlers();
+
       getInputs(access).forEach((input) => {
-        input.onmidimessage = (event) => {
+        const previous = input.onmidimessage;
+        const handler: MIDIInput["onmidimessage"] = (event) => {
           if (!event.data) {
             return;
           }
@@ -112,14 +142,21 @@ export function useMidiInput(
             });
           }
         };
+
+        input.onmidimessage = handler;
+        midiHandlersRef.current.push({ input, handler, previous });
       });
 
-      access.onstatechange = () => {
+      const previous = access.onstatechange;
+      const handler: MIDIAccess["onstatechange"] = () => {
         syncInputs(access);
         attachListeners(access);
       };
+
+      access.onstatechange = handler;
+      stateHandlerRef.current = { access, handler, previous };
     },
-    [syncInputs],
+    [detachInstalledHandlers, syncInputs],
   );
 
   const connect = useCallback(async () => {
@@ -128,34 +165,47 @@ export function useMidiInput(
       return;
     }
 
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+
     try {
       setError(null);
       const access = await navigator.requestMIDIAccess({ sysex: false });
 
+      if (!isMountedRef.current || requestId !== requestIdRef.current) {
+        return;
+      }
+
       if (accessRef.current && accessRef.current !== access) {
-        detachListeners(accessRef.current);
+        detachInstalledHandlers();
       }
 
       accessRef.current = access;
       syncInputs(access);
       attachListeners(access);
     } catch (caught) {
+      if (!isMountedRef.current || requestId !== requestIdRef.current) {
+        return;
+      }
+
       setError(caught instanceof Error ? caught : new Error(String(caught)));
       setStatus("error");
     }
-  }, [attachListeners, detachListeners, syncInputs]);
+  }, [attachListeners, detachInstalledHandlers, syncInputs]);
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     if (!supportsMidi()) {
       setStatus("unsupported");
     }
 
     return () => {
-      if (accessRef.current) {
-        detachListeners(accessRef.current);
-      }
+      isMountedRef.current = false;
+      requestIdRef.current += 1;
+      detachInstalledHandlers();
     };
-  }, [detachListeners]);
+  }, [detachInstalledHandlers]);
 
   return {
     status,
