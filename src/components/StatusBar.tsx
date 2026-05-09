@@ -1,6 +1,7 @@
-import { Cable, Music2, Volume2, VolumeX } from "lucide-react";
+import { Cable, MousePointer2, Music2, Volume2, VolumeX } from "lucide-react";
 import type { AudioStatus } from "../audio/useToneSynth";
 import type { MidiStatus } from "../midi/useMidiInput";
+import type { PianoInteractionMode } from "../music/types";
 
 type StatusBarProps = {
   midiStatus: MidiStatus;
@@ -10,6 +11,8 @@ type StatusBarProps = {
   audioStatus: AudioStatus;
   onEnableAudio: () => void;
   onDisableAudio: () => void;
+  interactionMode: PianoInteractionMode;
+  onInteractionModeChange: (mode: PianoInteractionMode) => void;
 };
 
 function midiStatusLabel(status: MidiStatus, deviceCount: number): string {
@@ -52,6 +55,8 @@ export function StatusBar({
   audioStatus,
   onEnableAudio,
   onDisableAudio,
+  interactionMode,
+  onInteractionModeChange,
 }: StatusBarProps) {
   const audioOn = audioStatus === "on";
   const audioStarting = audioStatus === "starting";
@@ -69,6 +74,27 @@ export function StatusBar({
       </div>
 
       <div className="status-bar__controls">
+        <div className="status-bar__segmented" aria-label="Mouse interaction mode">
+          <MousePointer2 aria-hidden="true" size={16} />
+          <button
+            aria-label="Hold mode"
+            aria-pressed={interactionMode === "hold"}
+            className="status-bar__segment"
+            onClick={() => onInteractionModeChange("hold")}
+            type="button"
+          >
+            Hold
+          </button>
+          <button
+            aria-label="Latch mode"
+            aria-pressed={interactionMode === "latch"}
+            className="status-bar__segment"
+            onClick={() => onInteractionModeChange("latch")}
+            type="button"
+          >
+            Latch
+          </button>
+        </div>
         <button
           className="status-bar__button"
           onClick={onConnectMidi}

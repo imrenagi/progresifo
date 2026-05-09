@@ -20,7 +20,12 @@ import {
   MOBILE_PIANO_RANGE,
 } from "./music/notes";
 import { addChordToProgression, type ProgressionEntry } from "./music/progression";
-import type { ActiveNote, ActiveNoteSource, PianoRange } from "./music/types";
+import type {
+  ActiveNote,
+  ActiveNoteSource,
+  PianoInteractionMode,
+  PianoRange,
+} from "./music/types";
 
 const MOBILE_RANGE_QUERY = "(max-width: 767px)";
 
@@ -39,6 +44,8 @@ function getResponsiveRange(): PianoRange {
 
 export default function App() {
   const [activeNotes, setActiveNotes] = useState<ActiveNote[]>([]);
+  const [interactionMode, setInteractionMode] =
+    useState<PianoInteractionMode>("hold");
   const [progression, setProgression] = useState<ProgressionEntry[]>([]);
   const [range, setRange] = useState<PianoRange>(() => getResponsiveRange());
   const synth = useToneSynth();
@@ -120,6 +127,12 @@ export default function App() {
 
   const activeMidiNumbers = useMemo(
     () => getUniqueMidiNumbers(activeNotes),
+    [activeNotes],
+  );
+  const latchedPointerMidiNumbers = useMemo(
+    () => getUniqueMidiNumbers(
+      activeNotes.filter((note) => note.source === "pointer"),
+    ),
     [activeNotes],
   );
   const displayNotes = useMemo(() => getDisplayNotes(activeNotes), [activeNotes]);
@@ -225,6 +238,8 @@ export default function App() {
         onConnectMidi={midi.connect}
         onDisableAudio={disableAudio}
         onEnableAudio={enableAudio}
+        interactionMode={interactionMode}
+        onInteractionModeChange={setInteractionMode}
       />
 
       <section className="app-workspace" aria-label="Piano chord learning">
@@ -235,6 +250,8 @@ export default function App() {
 
         <PianoKeyboard
           activeMidiNumbers={activeMidiNumbers}
+          interactionMode={interactionMode}
+          latchedMidiNumbers={latchedPointerMidiNumbers}
           onNoteDown={(midiNumber) => handleNoteDown(midiNumber, "pointer")}
           onNoteUp={(midiNumber) => handleNoteUp(midiNumber, "pointer")}
           range={range}

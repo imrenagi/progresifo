@@ -80,6 +80,35 @@ describe("App", () => {
     expect(screen.getByText("C4 E4 G4")).toBeInTheDocument();
   });
 
+  it("forms a mouse chord by latching clicked piano keys", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Latch mode" }));
+
+    const c4 = screen.getByRole("button", { name: "C4" });
+    const e4 = screen.getByRole("button", { name: "E4" });
+    const g4 = screen.getByRole("button", { name: "G4" });
+
+    fireEvent.pointerDown(c4, { pointerId: 1 });
+    fireEvent.pointerUp(c4, { pointerId: 1 });
+    fireEvent.pointerDown(e4, { pointerId: 2 });
+    fireEvent.pointerUp(e4, { pointerId: 2 });
+    fireEvent.pointerDown(g4, { pointerId: 3 });
+    fireEvent.pointerUp(g4, { pointerId: 3 });
+
+    expect(screen.getByRole("heading", { name: "CM" })).toBeInTheDocument();
+    expect(screen.getByText("C4 E4 G4")).toBeInTheDocument();
+    expect(c4).toHaveAttribute("aria-pressed", "true");
+    expect(e4).toHaveAttribute("aria-pressed", "true");
+    expect(g4).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.pointerDown(c4, { pointerId: 4 });
+    fireEvent.pointerUp(c4, { pointerId: 4 });
+
+    expect(screen.getByText("E4 G4")).toBeInTheDocument();
+    expect(c4).toHaveAttribute("aria-pressed", "false");
+  });
+
   it("releases synth audio only after the last source owner releases a note", () => {
     render(<App />);
 

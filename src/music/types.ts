@@ -1,5 +1,7 @@
 export type ActiveNoteSource = "pointer" | "midi";
 
+export type PianoInteractionMode = "hold" | "latch";
+
 export type ActiveNote = {
   id: string;
   midi: number;

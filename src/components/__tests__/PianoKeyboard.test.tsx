@@ -45,6 +45,43 @@ describe("PianoKeyboard", () => {
     expect(onNoteUp).toHaveBeenCalledWith(60);
   });
 
+  it("toggles pointer notes in latch interaction mode", () => {
+    const onNoteDown = vi.fn();
+    const onNoteUp = vi.fn();
+    const { rerender } = render(
+      <PianoKeyboard
+        activeMidiNumbers={[]}
+        interactionMode="latch"
+        onNoteDown={onNoteDown}
+        onNoteUp={onNoteUp}
+        range={MOBILE_PIANO_RANGE}
+      />,
+    );
+
+    const c4 = screen.getByRole("button", { name: "C4" });
+    fireEvent.pointerDown(c4, { pointerId: 1 });
+    fireEvent.pointerUp(c4, { pointerId: 1 });
+
+    expect(onNoteDown).toHaveBeenCalledWith(60);
+    expect(onNoteUp).not.toHaveBeenCalled();
+
+    rerender(
+      <PianoKeyboard
+        activeMidiNumbers={[60]}
+        interactionMode="latch"
+        onNoteDown={onNoteDown}
+        onNoteUp={onNoteUp}
+        range={MOBILE_PIANO_RANGE}
+      />,
+    );
+
+    fireEvent.pointerDown(c4, { pointerId: 2 });
+    fireEvent.pointerUp(c4, { pointerId: 2 });
+
+    expect(onNoteDown).toHaveBeenCalledTimes(1);
+    expect(onNoteUp).toHaveBeenCalledWith(60);
+  });
+
   it("does not release a pointer-held note on blur", () => {
     const onNoteDown = vi.fn();
     const onNoteUp = vi.fn();

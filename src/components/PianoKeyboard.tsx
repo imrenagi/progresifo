@@ -1,9 +1,11 @@
 import { useRef, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import { buildPianoKeys } from "../music/notes";
-import type { PianoKey, PianoRange } from "../music/types";
+import type { PianoInteractionMode, PianoKey, PianoRange } from "../music/types";
 
 type PianoKeyboardProps = {
   activeMidiNumbers: number[];
+  interactionMode?: PianoInteractionMode;
+  latchedMidiNumbers?: number[];
   range: PianoRange;
   onNoteDown: (midi: number) => void;
   onNoteUp: (midi: number) => void;
@@ -65,6 +67,8 @@ function deleteHeldPointerForMidi(
 
 export function PianoKeyboard({
   activeMidiNumbers,
+  interactionMode = "hold",
+  latchedMidiNumbers = activeMidiNumbers,
   range,
   onNoteDown,
   onNoteUp,
@@ -73,6 +77,7 @@ export function PianoKeyboard({
   const heldPointerIdsRef = useRef<Map<number, number>>(new Map());
   const keys = positionKeys(buildPianoKeys(range));
   const activeSet = new Set(activeMidiNumbers);
+  const latchedSet = new Set(latchedMidiNumbers);
   const whiteKeys = keys.filter((key) => !key.isBlack);
   const blackKeys = keys.filter((key) => key.isBlack);
   const whiteKeyCount = whiteKeys.length;
@@ -82,6 +87,16 @@ export function PianoKeyboard({
     event: PointerEvent<HTMLButtonElement>,
   ) => {
     capturePointer(event);
+
+    if (interactionMode === "latch") {
+      if (latchedSet.has(key.midi)) {
+        onNoteUp(key.midi);
+      } else {
+        onNoteDown(key.midi);
+      }
+
+      return;
+    }
 
     if (heldPointerIdsRef.current.get(event.pointerId) === key.midi) {
       return;
@@ -95,6 +110,10 @@ export function PianoKeyboard({
     key: PositionedPianoKey,
     event: PointerEvent<HTMLButtonElement>,
   ) => {
+    if (interactionMode === "latch") {
+      return;
+    }
+
     if (heldPointerIdsRef.current.get(event.pointerId) !== key.midi) {
       if (!deleteHeldPointerForMidi(heldPointerIdsRef.current, key.midi)) {
         return;
