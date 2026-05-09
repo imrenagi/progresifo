@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { useToneSynth } from "./audio/useToneSynth";
 import { ChordReadout } from "./components/ChordReadout";
 import { PianoKeyboard } from "./components/PianoKeyboard";
@@ -64,20 +65,29 @@ export default function App() {
 
   const handleNoteUp = useCallback(
     (midi: number, source: ActiveNoteSource) => {
-      const sourceOwnsNote = activeNotes.some(
-        (note) => note.midi === midi && note.source === source,
-      );
-      const hasRemainingOwner = activeNotes.some(
-        (note) => note.midi === midi && note.source !== source,
-      );
+      let shouldReleaseAudio = false;
 
-      setActiveNotes((current) => removeActiveNote(current, midi, source));
+      flushSync(() => {
+        setActiveNotes((current) => {
+          const sourceOwnsNote = current.some(
+            (note) => note.midi === midi && note.source === source,
+          );
+          const nextActiveNotes = removeActiveNote(current, midi, source);
+          const hasRemainingOwner = nextActiveNotes.some(
+            (note) => note.midi === midi,
+          );
 
-      if (sourceOwnsNote && !hasRemainingOwner) {
+          shouldReleaseAudio = sourceOwnsNote && !hasRemainingOwner;
+
+          return nextActiveNotes;
+        });
+      });
+
+      if (shouldReleaseAudio) {
         triggerRelease(midi);
       }
     },
-    [activeNotes, triggerRelease],
+    [triggerRelease],
   );
 
   const midiOptions = useMemo(

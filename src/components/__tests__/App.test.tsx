@@ -120,4 +120,20 @@ describe("App", () => {
     expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
     expect(mocks.triggerRelease).toHaveBeenLastCalledWith(60);
   });
+
+  it("releases synth audio once for duplicate note-up events before rerender", () => {
+    render(<App />);
+
+    act(() => {
+      mocks.midiCallbacks.onNoteOn?.({ note: 60, velocity: 96 });
+    });
+
+    act(() => {
+      mocks.midiCallbacks.onNoteOff?.({ note: 60 });
+      mocks.midiCallbacks.onNoteOff?.({ note: 60 });
+    });
+
+    expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
+    expect(mocks.triggerRelease).toHaveBeenLastCalledWith(60);
+  });
 });
