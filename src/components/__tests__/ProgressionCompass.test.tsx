@@ -77,9 +77,28 @@ describe("ProgressionCompass", () => {
 
     expect(screen.getByText("You are here")).toBeInTheDocument();
     expect(screen.getByText("I (C)")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "vi (Am)" }));
+    const selectedButton = screen.getByRole("button", { name: "vi (Am)" });
+
+    expect(selectedButton).toHaveAttribute("data-selected", "true");
+    fireEvent.click(selectedButton);
 
     expect(onSuggestionSelect).toHaveBeenCalledWith(next.id);
+  });
+
+  it("renders an empty state when no suggestions exist", () => {
+    render(
+      <ProgressionCompass
+        currentNode={current}
+        matchedSuggestionId={null}
+        onSuggestionSelect={vi.fn()}
+        selectedSuggestionId={null}
+        suggestions={[]}
+      />,
+    );
+
+    expect(
+      screen.getByText("No curated moves for this chord in this genre yet."),
+    ).toBeInTheDocument();
   });
 
   it("marks a matched suggestion", () => {
