@@ -4,6 +4,7 @@ import type { PianoInteractionMode, PianoKey, PianoRange } from "../music/types"
 
 type PianoKeyboardProps = {
   activeMidiNumbers: number[];
+  hintedMidiNumbers?: number[];
   interactionMode?: PianoInteractionMode;
   latchedMidiNumbers?: number[];
   range: PianoRange;
@@ -67,6 +68,7 @@ function deleteHeldPointerForMidi(
 
 export function PianoKeyboard({
   activeMidiNumbers,
+  hintedMidiNumbers = [],
   interactionMode = "hold",
   latchedMidiNumbers = activeMidiNumbers,
   range,
@@ -77,6 +79,7 @@ export function PianoKeyboard({
   const heldPointerIdsRef = useRef<Map<number, number>>(new Map());
   const keys = positionKeys(buildPianoKeys(range));
   const activeSet = new Set(activeMidiNumbers);
+  const hintedSet = new Set(hintedMidiNumbers);
   const latchedSet = new Set(latchedMidiNumbers);
   const whiteKeys = keys.filter((key) => !key.isBlack);
   const blackKeys = keys.filter((key) => key.isBlack);
@@ -163,6 +166,7 @@ export function PianoKeyboard({
 
   const renderKey = (key: PositionedPianoKey) => {
     const isActive = activeSet.has(key.midi);
+    const isHinted = hintedSet.has(key.midi);
     const visibleLabel = key.name === "C4" ? key.name : null;
     const style = key.isBlack
       ? {
@@ -179,6 +183,7 @@ export function PianoKeyboard({
           key.isBlack ? "piano-key--black" : "piano-key--white"
         }`}
         data-active={isActive}
+        data-hinted={isHinted}
         key={key.midi}
         onKeyDown={(event) => pressKeyboardNote(key, event)}
         onKeyUp={(event) => releaseKeyboardNote(key, event)}

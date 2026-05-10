@@ -336,6 +336,10 @@ button {
   background: linear-gradient(180deg, #c8fff7 0%, var(--color-key-white-pressed) 100%);
 }
 
+.piano-key--white[data-hinted="true"] {
+  box-shadow: inset 0 0 0 3px rgba(242, 184, 75, 0.72);
+}
+
 .piano-key--black {
   position: absolute;
   top: 0;
@@ -350,6 +354,12 @@ button {
 .piano-key--black[data-active="true"] {
   background: linear-gradient(180deg, #2ed8ca 0%, var(--color-key-black-pressed) 100%);
   color: #061312;
+}
+
+.piano-key--black[data-hinted="true"] {
+  box-shadow:
+    inset 0 0 0 2px rgba(242, 184, 75, 0.82),
+    0 0.75rem 1.25rem rgba(0, 0, 0, 0.46);
 }
 
 .piano-key__label {

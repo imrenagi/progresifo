@@ -24,6 +24,35 @@ describe("PianoKeyboard", () => {
     );
   });
 
+  it("marks hinted target keys separately from active keys", () => {
+    render(
+      <PianoKeyboard
+        activeMidiNumbers={[60]}
+        hintedMidiNumbers={[60, 64, 67]}
+        onNoteDown={vi.fn()}
+        onNoteUp={vi.fn()}
+        range={MOBILE_PIANO_RANGE}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "C4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "E4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "D4" })).toHaveAttribute(
+      "data-hinted",
+      "false",
+    );
+    expect(screen.getByRole("button", { name: "C4" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
   it("shows only middle C as a visible key reference", () => {
     render(
       <PianoKeyboard
