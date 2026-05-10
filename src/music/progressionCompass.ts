@@ -28,22 +28,8 @@ const SHARP_PITCH_CLASSES = [
   "B",
 ];
 
-const FLAT_PITCH_CLASSES = [
-  "C",
-  "Db",
-  "D",
-  "Eb",
-  "E",
-  "F",
-  "Gb",
-  "G",
-  "Ab",
-  "A",
-  "Bb",
-  "B",
-];
-
-const COMMON_FLAT_KEY_ROOTS = new Set(["F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"]);
+const NATURAL_PITCH_CLASS_SEMITONES = [0, 2, 4, 5, 7, 9, 11];
+const NOTE_LETTERS = ["C", "D", "E", "F", "G", "A", "B"];
 
 const SCALE_INTERVALS: Record<KeyMode, number[]> = {
   major: [0, 2, 4, 5, 7, 9, 11],
@@ -73,17 +59,30 @@ function normalizeSemitone(semitone: number): number {
   return ((semitone % 12) + 12) % 12;
 }
 
-function semitoneToPitchClass(semitone: number): string {
-  return SHARP_PITCH_CLASSES[normalizeSemitone(semitone)];
+function normalizeAccidental(semitoneOffset: number): string {
+  let normalizedOffset = semitoneOffset;
+
+  while (normalizedOffset > 6) {
+    normalizedOffset -= 12;
+  }
+
+  while (normalizedOffset <= -6) {
+    normalizedOffset += 12;
+  }
+
+  if (normalizedOffset > 0) {
+    return "#".repeat(normalizedOffset);
+  }
+
+  if (normalizedOffset < 0) {
+    return "b".repeat(Math.abs(normalizedOffset));
+  }
+
+  return "";
 }
 
-function semitoneToDisplayPitchClass(
-  semitone: number,
-  preferFlats: boolean,
-): string {
-  const pitchClasses = preferFlats ? FLAT_PITCH_CLASSES : SHARP_PITCH_CLASSES;
-
-  return pitchClasses[normalizeSemitone(semitone)];
+function semitoneToPitchClass(semitone: number): string {
+  return SHARP_PITCH_CLASSES[normalizeSemitone(semitone)];
 }
 
 function getPitchClassSemitone(noteName: string): number {
@@ -94,6 +93,16 @@ function getPitchClassSemitone(noteName: string): number {
   }
 
   return chroma as number;
+}
+
+function getPitchClassStep(noteName: string): number {
+  const step = Note.get(noteName).step;
+
+  if (!Number.isInteger(step)) {
+    throw new Error(`Unable to read pitch class step from ${noteName}.`);
+  }
+
+  return step as number;
 }
 
 function getNodeRootPitchClass(
@@ -124,15 +133,17 @@ function getNodeDisplayRootPitchClass(
   }
 
   const accidental = node.accidental ?? 0;
-  const preferFlats =
-    accidental < 0 ||
-    keyRoot.includes("b") ||
-    COMMON_FLAT_KEY_ROOTS.has(keyRoot);
-
-  return semitoneToDisplayPitchClass(
+  const displayStep = (getPitchClassStep(keyRoot) + node.degree - 1) % 7;
+  const displayLetter = NOTE_LETTERS[displayStep];
+  const naturalSemitone = NATURAL_PITCH_CLASS_SEMITONES[displayStep];
+  const desiredSemitone = normalizeSemitone(
     getPitchClassSemitone(keyRoot) + scaleInterval + accidental,
-    preferFlats,
   );
+  const displayAccidental = normalizeAccidental(
+    desiredSemitone - naturalSemitone,
+  );
+
+  return `${displayLetter}${displayAccidental}`;
 }
 
 function getChordName(rootPitchClass: string, displayQuality: string): string {

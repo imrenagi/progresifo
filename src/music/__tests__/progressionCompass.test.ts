@@ -126,6 +126,20 @@ describe("progressionCompass", () => {
     ).toContain("IV (Bb)");
   });
 
+  it("uses diatonic spelling for flat-key starter suggestions", () => {
+    expect(
+      getStarterSuggestions("pop", "major", "Gb").map(
+        (suggestion) => suggestion.displayName,
+      ),
+    ).toContain("IV (Cb)");
+  });
+
+  it("uses diatonic spelling for flat-key tonic labels", () => {
+    expect(buildCompassNodeView("pop", "major", "Cb", "I").displayName).toBe(
+      "I (Cb)",
+    );
+  });
+
   it("does not match invalid played pitch-class input", () => {
     const target = buildTargetVoicingForNode("pop", "major", "C", "I");
 
