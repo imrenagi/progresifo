@@ -44,6 +44,45 @@ export type KeyMode = "major" | "minor";
 
 export type ProgressionDisplayMode = "next-moves" | "full-progressions";
 
+export type WorkspaceMode = "progressions" | "chord-construction";
+
+export type ChordFamily =
+  | "triads"
+  | "suspended-add"
+  | "sixths"
+  | "sevenths"
+  | "extended"
+  | "altered";
+
+export type ChordFunctionTag =
+  | "tonic"
+  | "predominant"
+  | "dominant"
+  | "passing"
+  | "color"
+  | "substitution";
+
+export type ChordType = {
+  readonly id: string;
+  readonly family: ChordFamily;
+  readonly symbol: string;
+  readonly name: string;
+  readonly intervals: readonly number[];
+  readonly formula: string;
+  readonly description: string;
+  readonly usage: string;
+  readonly feeling: string;
+  readonly commonFunctions: readonly ChordFunctionTag[];
+  readonly examples: readonly string[];
+};
+
+export type ChordConstructionExample = {
+  readonly id: string;
+  readonly root: string;
+  readonly chordName: string;
+  readonly target: TargetVoicing;
+};
+
 export type SuggestionDifficulty = "basic" | "colorful" | "advanced";
 
 export type SuggestionFunction =
