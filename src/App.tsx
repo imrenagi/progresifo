@@ -254,6 +254,16 @@ export default function App() {
   );
   const displayNotes = useMemo(() => getDisplayNotes(activeNotes), [activeNotes]);
   const detection = useMemo(() => detectChord(activeNotes), [activeNotes]);
+  const detectedCompassNodeId = useMemo(
+    () =>
+      findNodeIdForPitchClasses(
+        progressionGenre,
+        keyMode,
+        progressionKey,
+        detection.pitchClasses,
+      ),
+    [detection.pitchClasses, keyMode, progressionGenre, progressionKey],
+  );
   const compassSuggestions = useMemo<ProgressionSuggestion[]>(() => {
     if (!currentCompassNode) {
       return getStarterSuggestions(progressionGenre, keyMode, progressionKey);
@@ -337,27 +347,26 @@ export default function App() {
       return;
     }
 
-    const nodeId = findNodeIdForPitchClasses(
-      progressionGenre,
-      keyMode,
-      progressionKey,
-      detection.pitchClasses,
-    );
-
-    if (!nodeId) {
+    if (!detectedCompassNodeId) {
       return;
     }
 
     setCurrentCompassNode((current) => {
-      if (current?.nodeId === nodeId) {
+      if (current?.nodeId === detectedCompassNodeId) {
         return current;
       }
 
-      return buildCompassNodeView(progressionGenre, keyMode, progressionKey, nodeId);
+      return buildCompassNodeView(
+        progressionGenre,
+        keyMode,
+        progressionKey,
+        detectedCompassNodeId,
+      );
     });
   }, [
     compassSuggestions,
     currentCompassNode,
+    detectedCompassNodeId,
     detection.pitchClasses,
     keyMode,
     progressionGenre,
@@ -368,6 +377,19 @@ export default function App() {
     setSelectedSuggestionId(compassSuggestions[0]?.id ?? null);
     setMatchedSuggestionId(null);
   }, [compassSuggestions]);
+
+  useEffect(() => {
+    if (
+      !pendingMatchedNodeId ||
+      !detectedCompassNodeId ||
+      detectedCompassNodeId === pendingMatchedNodeId
+    ) {
+      return;
+    }
+
+    setMatchedSuggestionId(null);
+    setPendingMatchedNodeId(null);
+  }, [detectedCompassNodeId, pendingMatchedNodeId]);
 
   useEffect(() => {
     if (compassSuggestions.length === 0 || detection.pitchClasses.length === 0) {
@@ -388,6 +410,7 @@ export default function App() {
   }, [
     compassSuggestions,
     detection.pitchClasses,
+    matchedSuggestionId,
   ]);
 
   useEffect(() => {
