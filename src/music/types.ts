@@ -42,6 +42,8 @@ export type ProgressionGenre =
 
 export type KeyMode = "major" | "minor";
 
+export type ProgressionDisplayMode = "next-moves" | "full-progressions";
+
 export type SuggestionDifficulty = "basic" | "colorful" | "advanced";
 
 export type SuggestionFunction =
@@ -98,4 +100,27 @@ export type CompassNodeView = {
   romanNumeral: string;
   chordName: string;
   displayName: string;
+};
+
+export type CuratedProgression = {
+  id: string;
+  name: string;
+  nodeIds: string[];
+  description?: string;
+};
+
+export type ResolvedProgressionStep = {
+  nodeId: string;
+  romanNumeral: string;
+  chordName: string;
+  displayName: string;
+  target: TargetVoicing;
+};
+
+export type ResolvedProgression = {
+  id: string;
+  name: string;
+  displaySequence: string;
+  steps: ResolvedProgressionStep[];
+  description?: string;
 };
