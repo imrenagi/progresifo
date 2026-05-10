@@ -594,13 +594,10 @@ export default function App() {
     const isLastStep =
       activeProgressionStepIndex === selectedProgression.steps.length - 1;
 
-    if (isLastStep) {
-      setIsProgressionComplete(true);
-    }
-
     const timeoutId = window.setTimeout(() => {
       if (isLastStep) {
         setActiveProgressionStepIndex(0);
+        setIsProgressionComplete(true);
       } else {
         setActiveProgressionStepIndex(activeProgressionStepIndex + 1);
       }

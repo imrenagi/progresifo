@@ -523,7 +523,19 @@ describe("App", () => {
         pointerId: 3,
       });
 
+      const finalStep = screen.getByRole("button", { name: "4 IV (F)" });
+      expect(finalStep).toHaveAccessibleDescription(/F4 A4 C5.*Matched/);
+      expect(screen.queryByText("Progression complete")).not.toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+
       expect(screen.getByText("Progression complete")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "1 I (C)" })).toHaveAttribute(
+        "aria-current",
+        "step",
+      );
 
       act(() => {
         vi.advanceTimersByTime(650);
