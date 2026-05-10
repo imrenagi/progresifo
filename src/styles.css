@@ -123,7 +123,11 @@ button {
 .progression-trail__empty,
 .progression-compass__label,
 .progression-compass__heading,
-.progression-compass__empty {
+.progression-compass__empty,
+.progression-practice__label,
+.progression-practice__heading,
+.progression-practice__empty,
+.progression-practice__complete {
   margin: 0;
 }
 
@@ -378,6 +382,146 @@ button {
   font-weight: 750;
 }
 
+.progression-practice {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid rgba(243, 245, 241, 0.1);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background: rgba(24, 28, 32, 0.86);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.2);
+}
+
+.progression-practice__browser,
+.progression-practice__rail {
+  min-width: 0;
+}
+
+.progression-practice__rail {
+  border-top: 1px solid rgba(243, 245, 241, 0.1);
+  padding-top: 1rem;
+}
+
+.progression-practice__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.progression-practice__label {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.progression-practice__heading {
+  margin-top: 0.35rem;
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.progression-practice__cards,
+.progression-practice__steps {
+  display: grid;
+  gap: 0.625rem;
+  margin-top: 0.875rem;
+}
+
+.progression-practice__steps {
+  padding: 0;
+  list-style: none;
+}
+
+.progression-practice__card,
+.progression-practice__step {
+  width: 100%;
+  border: 1px solid rgba(243, 245, 241, 0.13);
+  border-radius: 0.5rem;
+  background: rgba(243, 245, 241, 0.06);
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.progression-practice__card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem;
+}
+
+.progression-practice__step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.progression-practice__card:hover,
+.progression-practice__step:hover,
+.progression-practice__card[data-selected="true"],
+.progression-practice__step[data-active="true"] {
+  border-color: rgba(242, 184, 75, 0.55);
+  background: rgba(242, 184, 75, 0.13);
+}
+
+.progression-practice__step[data-matched="true"] {
+  border-color: rgba(142, 232, 220, 0.78);
+  background: rgba(142, 232, 220, 0.16);
+}
+
+.progression-practice__card-title,
+.progression-practice__step-name {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.progression-practice__sequence,
+.progression-practice__description,
+.progression-practice__keys,
+.progression-practice__empty {
+  color: var(--color-muted);
+  font-size: 0.86rem;
+}
+
+.progression-practice__sequence,
+.progression-practice__keys {
+  color: var(--color-text);
+  font-weight: 750;
+}
+
+.progression-practice__step-number {
+  display: grid;
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(243, 245, 241, 0.1);
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.progression-practice__step-body {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.progression-practice__complete {
+  margin-top: 0.75rem;
+  color: var(--color-key-white-pressed);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.progression-practice__empty {
+  margin-top: 0.875rem;
+}
+
 .piano-shell {
   align-self: end;
   border: 1px solid rgba(243, 245, 241, 0.1);
@@ -478,6 +622,19 @@ button {
   opacity: 0.72;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (min-width: 58rem) {
+  .progression-practice {
+    grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+  }
+
+  .progression-practice__rail {
+    border-top: 0;
+    border-left: 1px solid rgba(243, 245, 241, 0.1);
+    padding-top: 0;
+    padding-left: 1rem;
+  }
 }
 
 @media (min-width: 768px) {
