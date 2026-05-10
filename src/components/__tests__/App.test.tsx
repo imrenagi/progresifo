@@ -384,4 +384,74 @@ describe("App", () => {
     }).not.toThrow();
     expect(screen.getByRole("button", { name: "i (Cm)" })).toBeInTheDocument();
   });
+
+  it("selects a suggested target, confirms a matching inversion, and advances", () => {
+    vi.useFakeTimers();
+
+    try {
+      render(<App />);
+
+      fireEvent.pointerDown(screen.getByRole("button", { name: "C4" }), {
+        pointerId: 1,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "E4" }), {
+        pointerId: 2,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "G4" }), {
+        pointerId: 3,
+      });
+
+      expect(screen.getByText("You are here")).toBeInTheDocument();
+      expect(screen.getAllByText("I (C)").length).toBeGreaterThan(0);
+
+      fireEvent.click(screen.getByRole("button", { name: "vi (Am)" }));
+
+      fireEvent.pointerUp(screen.getByRole("button", { name: "C4" }), {
+        pointerId: 1,
+      });
+      fireEvent.pointerUp(screen.getByRole("button", { name: "E4" }), {
+        pointerId: 2,
+      });
+      fireEvent.pointerUp(screen.getByRole("button", { name: "G4" }), {
+        pointerId: 3,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "E4" }), {
+        pointerId: 4,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "A4" }), {
+        pointerId: 5,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "C5" }), {
+        pointerId: 6,
+      });
+
+      expect(screen.getByRole("button", { name: "vi (Am)" })).toHaveAttribute(
+        "data-matched",
+        "true",
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+
+      expect(screen.getAllByText("vi (Am)").length).toBeGreaterThan(0);
+      expect(
+        screen.queryByRole("button", { name: "vi (Am)" }),
+      ).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not add selected suggestions to the recent progression before they are played", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "vi (Am)" }));
+
+    expect(
+      within(
+        screen.getByRole("region", { name: "Recent progression" }),
+      ).queryByText("Am"),
+    ).not.toBeInTheDocument();
+  });
 });

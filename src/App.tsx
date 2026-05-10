@@ -20,10 +20,16 @@ import {
   FULL_PIANO_RANGE,
   MOBILE_PIANO_RANGE,
 } from "./music/notes";
-import { PROGRESSION_GENRES } from "./music/progressionGraph";
+import {
+  getProgressionGraph,
+  PROGRESSION_GENRES,
+} from "./music/progressionGraph";
 import {
   buildCompassNodeView,
   buildProgressionSuggestions,
+  buildTargetVoicingForNode,
+  doesPitchClassSetMatchTarget,
+  findMatchingSuggestion,
   getStarterSuggestions,
 } from "./music/progressionCompass";
 import { addChordToProgression, type ProgressionEntry } from "./music/progression";
@@ -40,12 +46,33 @@ import type {
 
 const MOBILE_RANGE_QUERY = "(max-width: 767px)";
 const KEY_ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const MATCH_CONFIRMATION_MS = 600;
 
 function genreLabel(genre: ProgressionGenre): string {
   return genre
     .split("-")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join("-");
+}
+
+function findNodeIdForPitchClasses(
+  genre: ProgressionGenre,
+  mode: KeyMode,
+  keyRoot: string,
+  pitchClasses: string[],
+): string | null {
+  if (pitchClasses.length === 0) {
+    return null;
+  }
+
+  const graph = getProgressionGraph(genre, mode);
+
+  return (
+    graph.nodes.find((node) => {
+      const target = buildTargetVoicingForNode(genre, mode, keyRoot, node.id);
+      return doesPitchClassSetMatchTarget(pitchClasses, target.pitchClasses);
+    })?.id ?? null
+  );
 }
 
 function getResponsiveRange(): PianoRange {
@@ -299,9 +326,79 @@ export default function App() {
   }, [detection.primary]);
 
   useEffect(() => {
+    if (currentCompassNode) {
+      return;
+    }
+
+    const nodeId = findNodeIdForPitchClasses(
+      progressionGenre,
+      keyMode,
+      progressionKey,
+      detection.pitchClasses,
+    );
+
+    if (!nodeId) {
+      return;
+    }
+
+    setCurrentCompassNode((current) => {
+      if (current?.nodeId === nodeId) {
+        return current;
+      }
+
+      return buildCompassNodeView(progressionGenre, keyMode, progressionKey, nodeId);
+    });
+  }, [
+    currentCompassNode,
+    detection.pitchClasses,
+    keyMode,
+    progressionGenre,
+    progressionKey,
+  ]);
+
+  useEffect(() => {
     setSelectedSuggestionId(compassSuggestions[0]?.id ?? null);
     setMatchedSuggestionId(null);
   }, [compassSuggestions]);
+
+  useEffect(() => {
+    if (compassSuggestions.length === 0 || detection.pitchClasses.length === 0) {
+      return;
+    }
+
+    const matchedSuggestion = findMatchingSuggestion(
+      compassSuggestions,
+      detection.pitchClasses,
+    );
+
+    if (!matchedSuggestion || matchedSuggestion.id === matchedSuggestionId) {
+      return;
+    }
+
+    setMatchedSuggestionId(matchedSuggestion.id);
+
+    const timeoutId = window.setTimeout(() => {
+      setCurrentCompassNode(
+        buildCompassNodeView(
+          progressionGenre,
+          keyMode,
+          progressionKey,
+          matchedSuggestion.nodeId,
+        ),
+      );
+      setMatchedSuggestionId(null);
+    }, MATCH_CONFIRMATION_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    compassSuggestions,
+    detection.pitchClasses,
+    keyMode,
+    progressionGenre,
+    progressionKey,
+  ]);
 
   useEffect(() => {
     setCurrentCompassNode(null);
