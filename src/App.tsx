@@ -300,6 +300,13 @@ export default function App() {
   );
   const displayNotes = useMemo(() => getDisplayNotes(activeNotes), [activeNotes]);
   const detection = useMemo(() => detectChord(activeNotes), [activeNotes]);
+  const detectedProgressionSignature = useMemo(
+    () =>
+      detection.pitchClasses.length > 0
+        ? pitchClassSignature(detection.pitchClasses)
+        : null,
+    [detection.pitchClasses],
+  );
   const detectedCompassNodeId = useMemo(
     () =>
       findNodeIdForPitchClasses(
@@ -570,17 +577,15 @@ export default function App() {
       return;
     }
 
-    if (detection.pitchClasses.length === 0) {
+    if (detectedProgressionSignature === null) {
       matchedProgressionSignatureRef.current = null;
       setMatchedProgressionStepIndex(null);
       return;
     }
 
-    const signature = pitchClassSignature(detection.pitchClasses);
-
     if (
       matchedProgressionSignatureRef.current !== null &&
-      matchedProgressionSignatureRef.current !== signature
+      matchedProgressionSignatureRef.current !== detectedProgressionSignature
     ) {
       matchedProgressionSignatureRef.current = null;
     }
@@ -595,11 +600,13 @@ export default function App() {
       return;
     }
 
-    if (matchedProgressionSignatureRef.current === signature) {
+    if (
+      matchedProgressionSignatureRef.current === detectedProgressionSignature
+    ) {
       return;
     }
 
-    matchedProgressionSignatureRef.current = signature;
+    matchedProgressionSignatureRef.current = detectedProgressionSignature;
     setMatchedProgressionStepIndex(activeProgressionStepIndex);
 
     const isLastStep =
@@ -623,7 +630,7 @@ export default function App() {
   }, [
     activeProgressionStep,
     activeProgressionStepIndex,
-    detection.pitchClasses,
+    detectedProgressionSignature,
     progressionDisplayMode,
     selectedProgression,
   ]);
