@@ -33,10 +33,18 @@ export function ProgressionPracticeRail({
           <div className="progression-practice__cards">
             {progressions.map((progression) => {
               const selected = progression.id === selectedProgression?.id;
+              const cardTitleId = `progression-practice-${progression.id}-title`;
+              const cardSequenceId = `progression-practice-${progression.id}-sequence`;
+              const cardDescriptionId = `progression-practice-${progression.id}-description`;
 
               return (
                 <button
-                  aria-label={progression.name}
+                  aria-describedby={
+                    progression.description
+                      ? `${cardSequenceId} ${cardDescriptionId}`
+                      : cardSequenceId
+                  }
+                  aria-labelledby={cardTitleId}
                   aria-pressed={selected}
                   className="progression-practice__card"
                   data-selected={selected}
@@ -44,14 +52,23 @@ export function ProgressionPracticeRail({
                   onClick={() => onProgressionSelect(progression.id)}
                   type="button"
                 >
-                  <span className="progression-practice__card-title">
+                  <span
+                    className="progression-practice__card-title"
+                    id={cardTitleId}
+                  >
                     {progression.name}
                   </span>
-                  <span className="progression-practice__sequence">
+                  <span
+                    className="progression-practice__sequence"
+                    id={cardSequenceId}
+                  >
                     {progression.displaySequence}
                   </span>
                   {progression.description ? (
-                    <span className="progression-practice__description">
+                    <span
+                      className="progression-practice__description"
+                      id={cardDescriptionId}
+                    >
                       {progression.description}
                     </span>
                   ) : null}
@@ -82,30 +99,46 @@ export function ProgressionPracticeRail({
 
         {selectedProgression ? (
           <ol className="progression-practice__steps" aria-label="Practice steps">
-            {selectedProgression.steps.map((step, index) => (
-              <li key={`${step.nodeId}:${index}`}>
-                <button
-                  aria-label={`Step ${index + 1}: ${step.displayName}`}
-                  className="progression-practice__step"
-                  data-active={index === activeStepIndex}
-                  data-matched={index === matchedStepIndex}
-                  onClick={() => onStepSelect(index)}
-                  type="button"
-                >
-                  <span className="progression-practice__step-number">
-                    {index + 1}
-                  </span>
-                  <span className="progression-practice__step-body">
-                    <span className="progression-practice__step-name">
-                      {step.displayName}
+            {selectedProgression.steps.map((step, index) => {
+              const active = index === activeStepIndex;
+              const matched = index === matchedStepIndex;
+              const matchedStatusId = `progression-practice-${selectedProgression.id}-${index}-matched`;
+
+              return (
+                <li key={`${step.nodeId}:${index}`}>
+                  <button
+                    aria-current={active ? "step" : undefined}
+                    aria-describedby={matched ? matchedStatusId : undefined}
+                    aria-label={`Step ${index + 1}: ${step.displayName}`}
+                    className="progression-practice__step"
+                    data-active={active}
+                    data-matched={matched}
+                    onClick={() => onStepSelect(index)}
+                    type="button"
+                  >
+                    <span className="progression-practice__step-number">
+                      {index + 1}
                     </span>
-                    <span className="progression-practice__keys">
-                      {step.target.noteNames.join(" ")}
+                    <span className="progression-practice__step-body">
+                      <span className="progression-practice__step-name">
+                        {step.displayName}
+                      </span>
+                      <span className="progression-practice__keys">
+                        {step.target.noteNames.join(" ")}
+                      </span>
                     </span>
-                  </span>
-                </button>
-              </li>
-            ))}
+                    {matched ? (
+                      <span
+                        className="progression-practice__matched"
+                        id={matchedStatusId}
+                      >
+                        Matched
+                      </span>
+                    ) : null}
+                  </button>
+                </li>
+              );
+            })}
           </ol>
         ) : (
           <p className="progression-practice__empty">

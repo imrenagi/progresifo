@@ -56,8 +56,17 @@ describe("ProgressionPracticeRail", () => {
     );
 
     expect(screen.getByRole("region", { name: "Full progressions" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Axis Progression" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Lift Progression" })).toHaveAttribute("aria-pressed", "false");
+    const axisCard = screen.getByRole("button", { name: "Axis Progression" });
+    expect(axisCard).toHaveAttribute("aria-pressed", "true");
+    expect(axisCard).toHaveAccessibleDescription(
+      /I \(C\) - V7 \(G7\) - vi \(Am\) - IV \(F\).*modern pop practice/,
+    );
+
+    const liftCard = screen.getByRole("button", { name: "Lift Progression" });
+    expect(liftCard).toHaveAttribute("aria-pressed", "false");
+    expect(liftCard).toHaveAccessibleDescription(
+      /I \(C\) - IV \(F\) - V7 \(G7\) - I \(C\)/,
+    );
 
     const rail = screen.getByRole("list", { name: "Practice steps" });
     expect(within(rail).getByText("I (C)")).toBeInTheDocument();
@@ -103,8 +112,15 @@ describe("ProgressionPracticeRail", () => {
     );
 
     expect(screen.getByText("Progression complete")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Step 1: I (C)" })).toHaveAttribute("data-matched", "true");
-    expect(screen.getByRole("button", { name: "Step 2: V7 (G7)" })).toHaveAttribute("data-active", "true");
+
+    const matchedStep = screen.getByRole("button", { name: "Step 1: I (C)" });
+    expect(matchedStep).toHaveAccessibleDescription("Matched");
+    expect(within(matchedStep).getByText("Matched")).toBeInTheDocument();
+    expect(matchedStep).toHaveAttribute("data-matched", "true");
+
+    const activeStep = screen.getByRole("button", { name: "Step 2: V7 (G7)" });
+    expect(activeStep).toHaveAttribute("aria-current", "step");
+    expect(activeStep).toHaveAttribute("data-active", "true");
   });
 
   it("renders an empty state without progressions", () => {
