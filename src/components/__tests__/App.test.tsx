@@ -359,6 +359,13 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Full progressions" }));
 
+    expect(screen.getByRole("button", { name: "Next moves" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(
+      screen.queryByRole("region", { name: "Progression compass" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("region", { name: "Full progressions" }),
     ).toBeInTheDocument();
@@ -393,6 +400,14 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "2 V7 (G7)" }));
 
+    expect(screen.getByRole("button", { name: "C4" })).toHaveAttribute(
+      "data-hinted",
+      "false",
+    );
+    expect(screen.getByRole("button", { name: "E4" })).toHaveAttribute(
+      "data-hinted",
+      "false",
+    );
     expect(screen.getByRole("button", { name: "G4" })).toHaveAttribute(
       "data-hinted",
       "true",

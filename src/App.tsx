@@ -167,6 +167,15 @@ export default function App() {
     setMatchedSuggestionId(null);
     setPendingMatchedNodeId(null);
   }, []);
+  const resetProgressionPractice = useCallback(
+    (genre: ProgressionGenre, mode: KeyMode) => {
+      setSelectedProgressionId(getFirstProgressionId(genre, mode));
+      setActiveProgressionStepIndex(0);
+      setMatchedProgressionStepIndex(null);
+      setIsProgressionComplete(false);
+    },
+    [],
+  );
 
   const handleNoteDown = useCallback(
     (
@@ -671,8 +680,11 @@ export default function App() {
                 aria-label="Progression genre"
                 value={progressionGenre}
                 onChange={(event) => {
+                  const nextGenre = event.target.value as ProgressionGenre;
+
                   resetCompass();
-                  setProgressionGenre(event.target.value as ProgressionGenre);
+                  resetProgressionPractice(nextGenre, keyMode);
+                  setProgressionGenre(nextGenre);
                 }}
               >
                 {PROGRESSION_GENRES.map((genre) => (
@@ -689,6 +701,7 @@ export default function App() {
                 value={progressionKey}
                 onChange={(event) => {
                   resetCompass();
+                  resetProgressionPractice(progressionGenre, keyMode);
                   setProgressionKey(event.target.value);
                 }}
               >
@@ -705,8 +718,11 @@ export default function App() {
                 aria-label="Key mode"
                 value={keyMode}
                 onChange={(event) => {
+                  const nextKeyMode = event.target.value as KeyMode;
+
                   resetCompass();
-                  setKeyMode(event.target.value as KeyMode);
+                  resetProgressionPractice(progressionGenre, nextKeyMode);
+                  setKeyMode(nextKeyMode);
                 }}
               >
                 <option value="major">Major</option>
@@ -717,6 +733,7 @@ export default function App() {
           <div
             className="progression-mode-toggle"
             aria-label="Progression display mode"
+            role="group"
           >
             <button
               aria-pressed={progressionDisplayMode === "next-moves"}
