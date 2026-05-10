@@ -443,6 +443,113 @@ describe("App", () => {
     }
   });
 
+  it("updates the current compass node when any graph chord is played", () => {
+    render(<App />);
+
+    fireEvent.pointerDown(screen.getByRole("button", { name: "C4" }), {
+      pointerId: 1,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "E4" }), {
+      pointerId: 2,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "G4" }), {
+      pointerId: 3,
+    });
+
+    expect(screen.getByRole("heading", { name: "I (C)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "vi (Am)" })).toBeInTheDocument();
+
+    fireEvent.pointerUp(screen.getByRole("button", { name: "C4" }), {
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(screen.getByRole("button", { name: "E4" }), {
+      pointerId: 2,
+    });
+    fireEvent.pointerUp(screen.getByRole("button", { name: "G4" }), {
+      pointerId: 3,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "D4" }), {
+      pointerId: 4,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "F4" }), {
+      pointerId: 5,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "A4" }), {
+      pointerId: 6,
+    });
+
+    expect(screen.getByRole("heading", { name: "ii (Dm)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "V7 (G7)" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "vi (Am)" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("advances a matched suggestion after notes are released", () => {
+    vi.useFakeTimers();
+
+    try {
+      render(<App />);
+
+      fireEvent.pointerDown(screen.getByRole("button", { name: "C4" }), {
+        pointerId: 1,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "E4" }), {
+        pointerId: 2,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "G4" }), {
+        pointerId: 3,
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: "vi (Am)" }));
+
+      fireEvent.pointerUp(screen.getByRole("button", { name: "C4" }), {
+        pointerId: 1,
+      });
+      fireEvent.pointerUp(screen.getByRole("button", { name: "E4" }), {
+        pointerId: 2,
+      });
+      fireEvent.pointerUp(screen.getByRole("button", { name: "G4" }), {
+        pointerId: 3,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "E4" }), {
+        pointerId: 4,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "A4" }), {
+        pointerId: 5,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "C5" }), {
+        pointerId: 6,
+      });
+
+      expect(screen.getByRole("button", { name: "vi (Am)" })).toHaveAttribute(
+        "data-matched",
+        "true",
+      );
+
+      fireEvent.pointerUp(screen.getByRole("button", { name: "E4" }), {
+        pointerId: 4,
+      });
+      fireEvent.pointerUp(screen.getByRole("button", { name: "A4" }), {
+        pointerId: 5,
+      });
+      fireEvent.pointerUp(screen.getByRole("button", { name: "C5" }), {
+        pointerId: 6,
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+
+      expect(screen.getByRole("heading", { name: "vi (Am)" })).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "vi (Am)" }),
+      ).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("does not add selected suggestions to the recent progression before they are played", () => {
     render(<App />);
 

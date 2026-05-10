@@ -117,6 +117,9 @@ export default function App() {
   const [matchedSuggestionId, setMatchedSuggestionId] = useState<string | null>(
     null,
   );
+  const [pendingMatchedNodeId, setPendingMatchedNodeId] = useState<string | null>(
+    null,
+  );
   const [range, setRange] = useState<PianoRange>(() => getResponsiveRange());
   const synth = useToneSynth();
   const {
@@ -131,6 +134,7 @@ export default function App() {
     setCurrentCompassNode(null);
     setSelectedSuggestionId(null);
     setMatchedSuggestionId(null);
+    setPendingMatchedNodeId(null);
   }, []);
 
   const handleNoteDown = useCallback(
@@ -326,7 +330,10 @@ export default function App() {
   }, [detection.primary]);
 
   useEffect(() => {
-    if (currentCompassNode) {
+    if (
+      currentCompassNode &&
+      findMatchingSuggestion(compassSuggestions, detection.pitchClasses)
+    ) {
       return;
     }
 
@@ -349,6 +356,7 @@ export default function App() {
       return buildCompassNodeView(progressionGenre, keyMode, progressionKey, nodeId);
     });
   }, [
+    compassSuggestions,
     currentCompassNode,
     detection.pitchClasses,
     keyMode,
@@ -376,6 +384,16 @@ export default function App() {
     }
 
     setMatchedSuggestionId(matchedSuggestion.id);
+    setPendingMatchedNodeId(matchedSuggestion.nodeId);
+  }, [
+    compassSuggestions,
+    detection.pitchClasses,
+  ]);
+
+  useEffect(() => {
+    if (!pendingMatchedNodeId) {
+      return;
+    }
 
     const timeoutId = window.setTimeout(() => {
       setCurrentCompassNode(
@@ -383,22 +401,17 @@ export default function App() {
           progressionGenre,
           keyMode,
           progressionKey,
-          matchedSuggestion.nodeId,
+          pendingMatchedNodeId,
         ),
       );
       setMatchedSuggestionId(null);
+      setPendingMatchedNodeId(null);
     }, MATCH_CONFIRMATION_MS);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [
-    compassSuggestions,
-    detection.pitchClasses,
-    keyMode,
-    progressionGenre,
-    progressionKey,
-  ]);
+  }, [keyMode, pendingMatchedNodeId, progressionGenre, progressionKey]);
 
   useEffect(() => {
     setCurrentCompassNode(null);
