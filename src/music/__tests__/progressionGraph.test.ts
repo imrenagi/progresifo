@@ -102,4 +102,16 @@ describe("progressionGraph", () => {
     expect(node.degree).toBe(6);
     expect(node).not.toHaveProperty("accidental");
   });
+
+  it("marks minor leading-tone diminished chords as raised seventh degree", () => {
+    const jazzLeadingTone = getProgressionNode("jazz", "minor", "viio7");
+    const classicalLeadingTone = getProgressionNode(
+      "classical",
+      "minor",
+      "viio7",
+    );
+
+    expect(jazzLeadingTone.accidental).toBe(1);
+    expect(classicalLeadingTone.accidental).toBe(1);
+  });
 });

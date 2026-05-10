@@ -75,7 +75,51 @@ describe("progressionCompass", () => {
       (suggestion: ProgressionSuggestion) => suggestion.nodeId === "V7alt",
     );
 
-    expect(altered?.displayName).toBe("V7alt (E7)");
+    expect(altered?.displayName).toBe("V7alt (E7alt)");
     expect(altered?.difficulty).toBe("advanced");
+  });
+
+  it("raises minor leading-tone diminished roots", () => {
+    const leadingTone = buildCompassNodeView(
+      "classical",
+      "minor",
+      "C",
+      "viio7",
+    );
+
+    expect(leadingTone.displayName).toBe("viio7 (Bdim7)");
+  });
+
+  it("uses display quality for labels while keeping computational target intervals", () => {
+    const suggestions = buildProgressionSuggestions(
+      "neo-soul",
+      "major",
+      "C",
+      "Imaj7",
+    );
+    const borrowedDominant = suggestions.find(
+      (suggestion: ProgressionSuggestion) =>
+        suggestion.nodeId === "bVII13sus",
+    );
+
+    expect(borrowedDominant?.displayName).toBe("bVII13sus (Bb13sus)");
+    expect(borrowedDominant?.target.pitchClasses).toEqual([
+      "A#",
+      "D#",
+      "F",
+      "G#",
+      "G",
+    ]);
+  });
+
+  it("does not match invalid played pitch-class input", () => {
+    const target = buildTargetVoicingForNode("pop", "major", "C", "I");
+
+    expect(
+      doesPitchClassSetMatchTarget(
+        ["C", "E", "G", "definitely-not-a-note"],
+        target.pitchClasses,
+      ),
+    ).toBe(false);
   });
 });

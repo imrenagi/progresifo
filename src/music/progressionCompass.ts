@@ -28,6 +28,21 @@ const SHARP_PITCH_CLASSES = [
   "B",
 ];
 
+const FLAT_PITCH_CLASSES = [
+  "C",
+  "Db",
+  "D",
+  "Eb",
+  "E",
+  "F",
+  "Gb",
+  "G",
+  "Ab",
+  "A",
+  "Bb",
+  "B",
+];
+
 const SCALE_INTERVALS: Record<KeyMode, number[]> = {
   major: [0, 2, 4, 5, 7, 9, 11],
   minor: [0, 2, 3, 5, 7, 8, 10],
@@ -60,14 +75,23 @@ function semitoneToPitchClass(semitone: number): string {
   return SHARP_PITCH_CLASSES[normalizeSemitone(semitone)];
 }
 
+function semitoneToDisplayPitchClass(
+  semitone: number,
+  accidental: number,
+): string {
+  const pitchClasses = accidental < 0 ? FLAT_PITCH_CLASSES : SHARP_PITCH_CLASSES;
+
+  return pitchClasses[normalizeSemitone(semitone)];
+}
+
 function getPitchClassSemitone(noteName: string): number {
   const chroma = Note.get(noteName).chroma;
 
-  if (typeof chroma !== "number") {
+  if (!Number.isFinite(chroma)) {
     throw new Error(`Unable to read pitch class from ${noteName}.`);
   }
 
-  return chroma;
+  return chroma as number;
 }
 
 function getNodeRootPitchClass(
@@ -86,12 +110,31 @@ function getNodeRootPitchClass(
   );
 }
 
-function getChordName(rootPitchClass: string, quality: string): string {
-  if (quality === "M" || quality === "") {
+function getNodeDisplayRootPitchClass(
+  mode: KeyMode,
+  keyRoot: string,
+  node: ProgressionGraphNode,
+): string {
+  const scaleInterval = SCALE_INTERVALS[mode][node.degree - 1];
+
+  if (typeof scaleInterval !== "number") {
+    throw new Error(`Unsupported scale degree ${node.degree}.`);
+  }
+
+  const accidental = node.accidental ?? 0;
+
+  return semitoneToDisplayPitchClass(
+    getPitchClassSemitone(keyRoot) + scaleInterval + accidental,
+    accidental,
+  );
+}
+
+function getChordName(rootPitchClass: string, displayQuality: string): string {
+  if (displayQuality === "M" || displayQuality === "") {
     return rootPitchClass;
   }
 
-  return `${rootPitchClass}${quality}`;
+  return `${rootPitchClass}${displayQuality}`;
 }
 
 function getChordPitchClasses(rootPitchClass: string, quality: string): string[] {
@@ -139,8 +182,12 @@ function buildCompassNodeDetails(
   keyRoot: string,
   node: ProgressionGraphNode,
 ): CompassNodeView {
-  const rootPitchClass = getNodeRootPitchClass(mode, keyRoot, node);
-  const chordName = getChordName(rootPitchClass, node.quality);
+  const displayRootPitchClass = getNodeDisplayRootPitchClass(
+    mode,
+    keyRoot,
+    node,
+  );
+  const chordName = getChordName(displayRootPitchClass, node.displayQuality);
 
   return {
     nodeId: node.id,
@@ -151,7 +198,6 @@ function buildCompassNodeDetails(
 }
 
 function buildSuggestionFromNode(
-  genre: ProgressionGenre,
   mode: KeyMode,
   keyRoot: string,
   node: ProgressionGraphNode,
@@ -176,18 +222,18 @@ function buildSuggestionFromNode(
   };
 }
 
-function normalizePitchClasses(pitchClasses: string[]): string[] {
+function normalizePitchClasses(pitchClasses: string[]): string[] | null {
   const normalized: string[] = [];
 
-  pitchClasses.forEach((pitchClass) => {
+  for (const pitchClass of pitchClasses) {
     const note = Note.get(pitchClass);
 
-    if (typeof note.chroma !== "number") {
-      return;
+    if (!Number.isFinite(note.chroma)) {
+      return null;
     }
 
-    normalized.push(semitoneToPitchClass(note.chroma));
-  });
+    normalized.push(semitoneToPitchClass(note.chroma as number));
+  }
 
   return normalized;
 }
@@ -227,7 +273,6 @@ export function buildProgressionSuggestions(
 
   return currentNode.moves.map((move: ProgressionMove) =>
     buildSuggestionFromNode(
-      genre,
       mode,
       keyRoot,
       getProgressionNode(genre, mode, move.to),
@@ -248,7 +293,6 @@ export function getStarterSuggestions(
 
   return graph.starterNodeIds.map((nodeId) =>
     buildSuggestionFromNode(
-      genre,
       mode,
       keyRoot,
       getProgressionNode(genre, mode, nodeId),
@@ -264,8 +308,15 @@ export function doesPitchClassSetMatchTarget(
   playedPitchClasses: string[],
   targetPitchClasses: string[],
 ): boolean {
-  const playedSet = new Set(normalizePitchClasses(playedPitchClasses));
-  const targetSet = new Set(normalizePitchClasses(targetPitchClasses));
+  const normalizedPlayedPitchClasses = normalizePitchClasses(playedPitchClasses);
+  const normalizedTargetPitchClasses = normalizePitchClasses(targetPitchClasses);
+
+  if (!normalizedPlayedPitchClasses || !normalizedTargetPitchClasses) {
+    return false;
+  }
+
+  const playedSet = new Set(normalizedPlayedPitchClasses);
+  const targetSet = new Set(normalizedTargetPitchClasses);
 
   if (playedSet.size !== targetSet.size) {
     return false;

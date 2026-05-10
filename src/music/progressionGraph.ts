@@ -309,14 +309,21 @@ const graphs: Record<ProgressionGenre, Record<KeyMode, ProgressionGraph>> = {
           reason: "viio7 creates a tight leading-tone pull.",
         },
       ]),
-      node("viio7", 7, "dim7", "dim7", [
-        {
-          to: "i7",
-          difficulty: "advanced",
-          functionLabel: "resolve",
-          reason: "The diminished leading-tone chord resolves to i.",
-        },
-      ]),
+      node(
+        "viio7",
+        7,
+        "dim7",
+        "dim7",
+        [
+          {
+            to: "i7",
+            difficulty: "advanced",
+            functionLabel: "resolve",
+            reason: "The diminished leading-tone chord resolves to i.",
+          },
+        ],
+        1,
+      ),
     ]),
   },
   blues: {
@@ -425,14 +432,21 @@ const graphs: Record<ProgressionGenre, Record<KeyMode, ProgressionGraph>> = {
             })
           : graphNode,
       ),
-      node("viio7", 7, "dim7", "dim7", [
-        {
-          to: "i",
-          difficulty: "advanced",
-          functionLabel: "resolve",
-          reason: "viio7 is a leading-tone chord that resolves to i.",
-        },
-      ]),
+      node(
+        "viio7",
+        7,
+        "dim7",
+        "dim7",
+        [
+          {
+            to: "i",
+            difficulty: "advanced",
+            functionLabel: "resolve",
+            reason: "viio7 is a leading-tone chord that resolves to i.",
+          },
+        ],
+        1,
+      ),
     ]),
   },
   gospel: {
