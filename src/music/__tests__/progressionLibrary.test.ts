@@ -8,7 +8,8 @@ import {
   validateProgressionLibrary,
   validateCuratedProgressions,
 } from "../progressionLibrary";
-import type { CuratedProgression } from "../types";
+import { PROGRESSION_GENRES } from "../progressionGraph";
+import type { CuratedProgression, KeyMode } from "../types";
 
 describe("progressionLibrary", () => {
   it("resolves curated progressions into transposed display sequences", () => {
@@ -98,6 +99,38 @@ describe("progressionLibrary", () => {
 
   it("includes curated progressions for every supported genre and mode", () => {
     expect(validateCuratedProgressions()).toEqual([]);
+  });
+
+  it("provides a larger curated library for every genre and mode", () => {
+    const modes: KeyMode[] = ["major", "minor"];
+
+    PROGRESSION_GENRES.forEach((genre) => {
+      modes.forEach((mode) => {
+        expect(
+          getResolvedProgressions(genre, mode, "C"),
+          `${genre} ${mode}`,
+        ).toHaveLength(6);
+      });
+    });
+  });
+
+  it("keeps curated progression ids and sequences unique per genre and mode", () => {
+    const modes: KeyMode[] = ["major", "minor"];
+
+    PROGRESSION_GENRES.forEach((genre) => {
+      modes.forEach((mode) => {
+        const progressions = getResolvedProgressions(genre, mode, "C");
+        const ids = progressions.map((progression) => progression.id);
+        const sequences = progressions.map((progression) =>
+          progression.steps.map((step) => step.nodeId).join(" "),
+        );
+
+        expect(new Set(ids).size, `${genre} ${mode} ids`).toBe(ids.length);
+        expect(new Set(sequences).size, `${genre} ${mode} sequences`).toBe(
+          sequences.length,
+        );
+      });
+    });
   });
 
   it("reports validation errors for empty lists and unknown node references", () => {
