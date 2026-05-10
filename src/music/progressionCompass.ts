@@ -43,6 +43,8 @@ const FLAT_PITCH_CLASSES = [
   "B",
 ];
 
+const COMMON_FLAT_KEY_ROOTS = new Set(["F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"]);
+
 const SCALE_INTERVALS: Record<KeyMode, number[]> = {
   major: [0, 2, 4, 5, 7, 9, 11],
   minor: [0, 2, 3, 5, 7, 8, 10],
@@ -77,9 +79,9 @@ function semitoneToPitchClass(semitone: number): string {
 
 function semitoneToDisplayPitchClass(
   semitone: number,
-  accidental: number,
+  preferFlats: boolean,
 ): string {
-  const pitchClasses = accidental < 0 ? FLAT_PITCH_CLASSES : SHARP_PITCH_CLASSES;
+  const pitchClasses = preferFlats ? FLAT_PITCH_CLASSES : SHARP_PITCH_CLASSES;
 
   return pitchClasses[normalizeSemitone(semitone)];
 }
@@ -122,10 +124,14 @@ function getNodeDisplayRootPitchClass(
   }
 
   const accidental = node.accidental ?? 0;
+  const preferFlats =
+    accidental < 0 ||
+    keyRoot.includes("b") ||
+    COMMON_FLAT_KEY_ROOTS.has(keyRoot);
 
   return semitoneToDisplayPitchClass(
     getPitchClassSemitone(keyRoot) + scaleInterval + accidental,
-    accidental,
+    preferFlats,
   );
 }
 
