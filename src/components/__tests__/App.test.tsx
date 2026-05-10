@@ -426,6 +426,119 @@ describe("App", () => {
     );
   });
 
+  it("auto-advances the active full progression step after a matching chord", () => {
+    vi.useFakeTimers();
+
+    try {
+      render(<App />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Full progressions" }));
+      expect(screen.getByRole("button", { name: "1 I (C)" })).toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+
+      fireEvent.pointerDown(screen.getByRole("button", { name: "E4" }), {
+        pointerId: 1,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "G4" }), {
+        pointerId: 2,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "C5" }), {
+        pointerId: 3,
+      });
+
+      const firstStep = screen.getByRole("button", { name: "1 I (C)" });
+      expect(firstStep).toHaveAccessibleDescription(/C4 E4 G4.*Matched/);
+
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+
+      expect(screen.getByRole("button", { name: "2 V7 (G7)" })).toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+      expect(
+        screen.getByRole("button", { name: "1 I (C)" }),
+      ).toHaveAccessibleDescription("C4 E4 G4");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not repeatedly advance while the same matching chord remains held", () => {
+    vi.useFakeTimers();
+
+    try {
+      render(<App />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Full progressions" }));
+      fireEvent.pointerDown(screen.getByRole("button", { name: "C4" }), {
+        pointerId: 1,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "E4" }), {
+        pointerId: 2,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "G4" }), {
+        pointerId: 3,
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+
+      expect(screen.getByRole("button", { name: "2 V7 (G7)" })).toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+      expect(screen.getByRole("button", { name: "3 vi (Am)" })).not.toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("marks completion after the final full progression step and loops to the first step", () => {
+    vi.useFakeTimers();
+
+    try {
+      render(<App />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Full progressions" }));
+      fireEvent.click(screen.getByRole("button", { name: "4 IV (F)" }));
+
+      fireEvent.pointerDown(screen.getByRole("button", { name: "F4" }), {
+        pointerId: 1,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "A4" }), {
+        pointerId: 2,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "C5" }), {
+        pointerId: 3,
+      });
+
+      expect(screen.getByText("Progression complete")).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+
+      expect(screen.queryByText("Progression complete")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "1 I (C)" })).toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("resets selected full progression when key mode changes", () => {
     render(<App />);
 

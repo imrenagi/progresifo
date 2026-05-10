@@ -35,6 +35,7 @@ import {
 } from "./music/progressionCompass";
 import { addChordToProgression, type ProgressionEntry } from "./music/progression";
 import {
+  doesProgressionStepMatchPitchClasses,
   getFirstProgressionId,
   getResolvedProgression,
   getResolvedProgressions,
@@ -120,6 +121,10 @@ function isEditableKeyboardTarget(target: EventTarget | null): boolean {
     target instanceof HTMLTextAreaElement ||
     target instanceof HTMLSelectElement
   );
+}
+
+function pitchClassSignature(pitchClasses: string[]): string {
+  return [...pitchClasses].sort().join("|");
 }
 
 export default function App() {
@@ -281,6 +286,7 @@ export default function App() {
     [midi.inputs],
   );
   const previousMidiInputIdsRef = useRef(midiInputIds);
+  const matchedProgressionSignatureRef = useRef<string | null>(null);
 
   const activeMidiNumbers = useMemo(
     () => getUniqueMidiNumbers(activeNotes),
@@ -552,6 +558,80 @@ export default function App() {
       window.clearTimeout(timeoutId);
     };
   }, [keyMode, pendingMatchedNodeId, progressionGenre, progressionKey]);
+
+  useEffect(() => {
+    if (
+      progressionDisplayMode !== "full-progressions" ||
+      !selectedProgression ||
+      !activeProgressionStep ||
+      detection.pitchClasses.length === 0
+    ) {
+      matchedProgressionSignatureRef.current = null;
+      return;
+    }
+
+    if (
+      !doesProgressionStepMatchPitchClasses(
+        activeProgressionStep,
+        detection.pitchClasses,
+      )
+    ) {
+      matchedProgressionSignatureRef.current = null;
+      return;
+    }
+
+    const signature = `${selectedProgression.id}:${activeProgressionStepIndex}:${pitchClassSignature(
+      detection.pitchClasses,
+    )}`;
+
+    if (matchedProgressionSignatureRef.current === signature) {
+      return;
+    }
+
+    matchedProgressionSignatureRef.current = signature;
+    setMatchedProgressionStepIndex(activeProgressionStepIndex);
+
+    const isLastStep =
+      activeProgressionStepIndex === selectedProgression.steps.length - 1;
+
+    if (isLastStep) {
+      setIsProgressionComplete(true);
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      if (isLastStep) {
+        setActiveProgressionStepIndex(0);
+      } else {
+        setActiveProgressionStepIndex(activeProgressionStepIndex + 1);
+      }
+
+      setMatchedProgressionStepIndex(null);
+    }, MATCH_CONFIRMATION_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    activeProgressionStep,
+    activeProgressionStepIndex,
+    detection.pitchClasses,
+    progressionDisplayMode,
+    selectedProgression,
+  ]);
+
+  useEffect(() => {
+    if (!isProgressionComplete) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setIsProgressionComplete(false);
+    }, MATCH_CONFIRMATION_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [isProgressionComplete]);
 
   useEffect(() => {
     setCurrentCompassNode(null);
