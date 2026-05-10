@@ -103,10 +103,10 @@ export type CompassNodeView = {
 };
 
 export type CuratedProgression = {
-  id: string;
-  name: string;
-  nodeIds: string[];
-  description?: string;
+  readonly id: string;
+  readonly name: string;
+  readonly nodeIds: readonly string[];
+  readonly description?: string;
 };
 
 export type ResolvedProgressionStep = {

@@ -14,9 +14,16 @@ import type {
 
 const KEY_MODES: KeyMode[] = ["major", "minor"];
 
+type ProgressionLibraryData = Partial<
+  Record<
+    ProgressionGenre,
+    Partial<Record<KeyMode, readonly CuratedProgression[]>>
+  >
+>;
+
 const curatedProgressions: Record<
   ProgressionGenre,
-  Record<KeyMode, CuratedProgression[]>
+  Record<KeyMode, readonly CuratedProgression[]>
 > = {
   pop: {
     major: [
@@ -206,11 +213,22 @@ const curatedProgressions: Record<
   },
 };
 
+function cloneCuratedProgression(
+  progression: CuratedProgression,
+): CuratedProgression {
+  return {
+    id: progression.id,
+    name: progression.name,
+    nodeIds: [...progression.nodeIds],
+    ...(progression.description ? { description: progression.description } : {}),
+  };
+}
+
 export function getCuratedProgressions(
   genre: ProgressionGenre,
   mode: KeyMode,
 ): CuratedProgression[] {
-  return curatedProgressions[genre][mode];
+  return curatedProgressions[genre][mode].map(cloneCuratedProgression);
 }
 
 export function getFirstProgressionId(
@@ -258,9 +276,9 @@ export function getResolvedProgression(
   genre: ProgressionGenre,
   mode: KeyMode,
   keyRoot: string,
-  progressionId: string | null,
+  progressionId: string | null | undefined,
 ): ResolvedProgression | null {
-  if (progressionId === null) {
+  if (progressionId == null) {
     return null;
   }
 
@@ -284,11 +302,17 @@ export function doesProgressionStepMatchPitchClasses(
 }
 
 export function validateCuratedProgressions(): string[] {
+  return validateProgressionLibrary(curatedProgressions);
+}
+
+export function validateProgressionLibrary(
+  progressionsByGenre: ProgressionLibraryData,
+): string[] {
   const errors: string[] = [];
 
   PROGRESSION_GENRES.forEach((genre) => {
     KEY_MODES.forEach((mode) => {
-      const progressions = getCuratedProgressions(genre, mode);
+      const progressions = progressionsByGenre[genre]?.[mode] ?? [];
 
       if (progressions.length === 0) {
         errors.push(`No curated progressions for ${genre} ${mode}.`);

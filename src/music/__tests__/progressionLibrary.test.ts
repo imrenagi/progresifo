@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   doesProgressionStepMatchPitchClasses,
+  getCuratedProgressions,
   getFirstProgressionId,
   getResolvedProgression,
   getResolvedProgressions,
+  validateProgressionLibrary,
   validateCuratedProgressions,
 } from "../progressionLibrary";
+import type { CuratedProgression } from "../types";
 
 describe("progressionLibrary", () => {
   it("resolves curated progressions into transposed display sequences", () => {
@@ -28,6 +31,22 @@ describe("progressionLibrary", () => {
   it("returns the first progression id for a genre and mode", () => {
     expect(getFirstProgressionId("pop", "major")).toBe("pop-axis");
     expect(getFirstProgressionId("pop", "minor")).toBe("pop-minor-loop");
+  });
+
+  it("does not expose mutable curated progression storage", () => {
+    const progressions = getCuratedProgressions("pop", "major");
+    const mutableProgressions = progressions as CuratedProgression[];
+
+    mutableProgressions.shift();
+    (mutableProgressions[0].nodeIds as string[]).push("ii");
+
+    expect(getFirstProgressionId("pop", "major")).toBe("pop-axis");
+    expect(getCuratedProgressions("pop", "major")[0].nodeIds).toEqual([
+      "I",
+      "V7",
+      "vi",
+      "IV",
+    ]);
   });
 
   it("resolves one selected progression with concrete target keys", () => {
@@ -53,6 +72,14 @@ describe("progressionLibrary", () => {
     });
   });
 
+  it("returns null for missing selected progression ids", () => {
+    expect(getResolvedProgression("pop", "major", "C", null)).toBeNull();
+    expect(getResolvedProgression("pop", "major", "C", undefined)).toBeNull();
+    expect(
+      getResolvedProgression("pop", "major", "C", "unknown-progression"),
+    ).toBeNull();
+  });
+
   it("matches a progression step across inversions and octaves", () => {
     const progression = getResolvedProgression("pop", "major", "C", "pop-axis");
 
@@ -71,5 +98,27 @@ describe("progressionLibrary", () => {
 
   it("includes curated progressions for every supported genre and mode", () => {
     expect(validateCuratedProgressions()).toEqual([]);
+  });
+
+  it("reports validation errors for empty lists and unknown node references", () => {
+    expect(
+      validateProgressionLibrary({
+        pop: {
+          major: [
+            {
+              id: "invalid-pop",
+              name: "Invalid Pop",
+              nodeIds: ["I", "missing-node"],
+            },
+          ],
+          minor: [],
+        },
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        "Unknown node missing-node in progression invalid-pop for pop major.",
+        "No curated progressions for pop minor.",
+      ]),
+    );
   });
 });
