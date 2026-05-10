@@ -22,7 +22,15 @@ function node(
   moves: ProgressionGraphNode["moves"],
   accidental = 0,
 ): ProgressionGraphNode {
-  return { id, label: id, degree, accidental, quality, displayQuality, moves };
+  return {
+    id,
+    label: id,
+    degree,
+    quality,
+    displayQuality,
+    moves,
+    ...(accidental === 0 ? {} : { accidental }),
+  };
 }
 
 const commonMajorNodes: ProgressionGraphNode[] = [
@@ -180,6 +188,13 @@ function graph(
   nodes: ProgressionGraphNode[],
 ): ProgressionGraph {
   return { genre, mode, starterNodeIds, nodes };
+}
+
+function withMove(
+  graphNode: ProgressionGraphNode,
+  move: ProgressionGraphNode["moves"][number],
+): ProgressionGraphNode {
+  return { ...graphNode, moves: [...graphNode.moves, move] };
 }
 
 const graphs: Record<ProgressionGenre, Record<KeyMode, ProgressionGraph>> = {
@@ -400,7 +415,16 @@ const graphs: Record<ProgressionGenre, Record<KeyMode, ProgressionGraph>> = {
   classical: {
     major: graph("classical", "major", ["I", "IV", "V7"], commonMajorNodes),
     minor: graph("classical", "minor", ["i", "iv", "V7"], [
-      ...commonMinorNodes,
+      ...commonMinorNodes.map((graphNode) =>
+        graphNode.id === "iv"
+          ? withMove(graphNode, {
+              to: "viio7",
+              difficulty: "advanced",
+              functionLabel: "tension",
+              reason: "iv can intensify into the leading-tone chord.",
+            })
+          : graphNode,
+      ),
       node("viio7", 7, "dim7", "dim7", [
         {
           to: "i",
@@ -413,7 +437,16 @@ const graphs: Record<ProgressionGenre, Record<KeyMode, ProgressionGraph>> = {
   },
   gospel: {
     major: graph("gospel", "major", ["I", "IV", "ii7"], [
-      ...commonMajorNodes,
+      ...commonMajorNodes.map((graphNode) =>
+        graphNode.id === "IV"
+          ? withMove(graphNode, {
+              to: "V/V",
+              difficulty: "advanced",
+              functionLabel: "tension",
+              reason: "IV can lift into a secondary dominant for V7.",
+            })
+          : graphNode,
+      ),
       node("ii7", 2, "m7", "m7", [
         {
           to: "V7sus4",
@@ -440,7 +473,16 @@ const graphs: Record<ProgressionGenre, Record<KeyMode, ProgressionGraph>> = {
       ]),
     ]),
     minor: graph("gospel", "minor", ["i", "iv", "V7"], [
-      ...commonMinorNodes,
+      ...commonMinorNodes.map((graphNode) =>
+        graphNode.id === "iv"
+          ? withMove(graphNode, {
+              to: "ivm7",
+              difficulty: "colorful",
+              functionLabel: "smooth",
+              reason: "iv can deepen into ivm7 before the suspended V.",
+            })
+          : graphNode,
+      ),
       node("ivm7", 4, "m7", "m7", [
         {
           to: "V7sus4",
