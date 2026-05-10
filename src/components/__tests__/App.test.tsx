@@ -362,6 +362,17 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "i (Dm)" })).toBeInTheDocument();
   });
 
+  it("offers flat keys with musician-friendly labels", () => {
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText("Progression key"), {
+      target: { value: "Bb" },
+    });
+
+    expect(screen.getByLabelText("Progression key")).toHaveValue("Bb");
+    expect(screen.getByRole("button", { name: "I (Bb)" })).toBeInTheDocument();
+  });
+
   it("uses a selected starter as the current compass node", () => {
     render(<App />);
 
@@ -480,6 +491,49 @@ describe("App", () => {
 
     expect(screen.getByRole("heading", { name: "ii (Dm)" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "V7 (G7)" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "vi (Am)" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("clears stale compass suggestions for detected chords outside the graph", () => {
+    render(<App />);
+
+    fireEvent.pointerDown(screen.getByRole("button", { name: "C4" }), {
+      pointerId: 1,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "E4" }), {
+      pointerId: 2,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "G4" }), {
+      pointerId: 3,
+    });
+
+    expect(screen.getByRole("heading", { name: "I (C)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "vi (Am)" })).toBeInTheDocument();
+
+    fireEvent.pointerUp(screen.getByRole("button", { name: "C4" }), {
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(screen.getByRole("button", { name: "E4" }), {
+      pointerId: 2,
+    });
+    fireEvent.pointerUp(screen.getByRole("button", { name: "G4" }), {
+      pointerId: 3,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "C#4" }), {
+      pointerId: 4,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "F4" }), {
+      pointerId: 5,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "G#4" }), {
+      pointerId: 6,
+    });
+
+    expect(
+      screen.getByText("No curated moves for this chord in this genre yet."),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "vi (Am)" }),
     ).not.toBeInTheDocument();

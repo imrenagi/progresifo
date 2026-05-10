@@ -45,8 +45,22 @@ import type {
 } from "./music/types";
 
 const MOBILE_RANGE_QUERY = "(max-width: 767px)";
-const KEY_ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const KEY_ROOTS = [
+  "C",
+  "Db",
+  "D",
+  "Eb",
+  "E",
+  "F",
+  "Gb",
+  "G",
+  "Ab",
+  "A",
+  "Bb",
+  "B",
+];
 const MATCH_CONFIRMATION_MS = 600;
+const UNSUPPORTED_COMPASS_NODE_ID = "__unsupported__";
 
 function genreLabel(genre: ProgressionGenre): string {
   return genre
@@ -264,7 +278,28 @@ export default function App() {
       ),
     [detection.pitchClasses, keyMode, progressionGenre, progressionKey],
   );
+  const unsupportedCompassNode = useMemo<CompassNodeView | null>(() => {
+    if (!detection.primary || detection.pitchClasses.length === 0) {
+      return null;
+    }
+
+    if (detectedCompassNodeId) {
+      return null;
+    }
+
+    return {
+      nodeId: UNSUPPORTED_COMPASS_NODE_ID,
+      romanNumeral: detection.primary,
+      chordName: detection.primary,
+      displayName: detection.primary,
+    };
+  }, [detectedCompassNodeId, detection.pitchClasses.length, detection.primary]);
+  const displayedCompassNode = unsupportedCompassNode ?? currentCompassNode;
   const compassSuggestions = useMemo<ProgressionSuggestion[]>(() => {
+    if (unsupportedCompassNode) {
+      return [];
+    }
+
     if (!currentCompassNode) {
       return getStarterSuggestions(progressionGenre, keyMode, progressionKey);
     }
@@ -275,7 +310,13 @@ export default function App() {
       progressionKey,
       currentCompassNode.nodeId,
     );
-  }, [currentCompassNode, keyMode, progressionGenre, progressionKey]);
+  }, [
+    currentCompassNode,
+    keyMode,
+    progressionGenre,
+    progressionKey,
+    unsupportedCompassNode,
+  ]);
 
   const selectedSuggestion =
     compassSuggestions.find(
@@ -348,6 +389,15 @@ export default function App() {
     }
 
     if (!detectedCompassNodeId) {
+      if (detection.primary && currentCompassNode) {
+        setCurrentCompassNode(null);
+      }
+
+      if (detection.primary) {
+        setMatchedSuggestionId(null);
+        setPendingMatchedNodeId(null);
+      }
+
       return;
     }
 
@@ -367,6 +417,7 @@ export default function App() {
     compassSuggestions,
     currentCompassNode,
     detectedCompassNodeId,
+    detection.primary,
     detection.pitchClasses,
     keyMode,
     progressionGenre,
@@ -592,7 +643,7 @@ export default function App() {
           </section>
           <ChordReadout detection={detection} displayNotes={displayNotes} />
           <ProgressionCompass
-            currentNode={currentCompassNode}
+            currentNode={displayedCompassNode}
             matchedSuggestionId={matchedSuggestionId}
             onSuggestionSelect={handleCompassSuggestionSelect}
             selectedSuggestionId={selectedSuggestion?.id ?? null}
