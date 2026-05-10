@@ -114,7 +114,7 @@ describe("ProgressionPracticeRail", () => {
       />,
     );
 
-    expect(screen.getByText("Progression complete")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Progression complete");
 
     const matchedStep = screen.getByRole("button", { name: "1 I (C)" });
     expect(matchedStep).toHaveAccessibleDescription(/C4 E4 G4.*Matched/);

@@ -1087,4 +1087,19 @@ describe("App", () => {
       ).queryByText("Am"),
     ).not.toBeInTheDocument();
   });
+
+  it("does not add selected full progression steps to the recent progression before they are played", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Full progressions" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lift Progression" }));
+    fireEvent.click(screen.getByRole("button", { name: "2 IV (F)" }));
+
+    const recentProgression = within(
+      screen.getByRole("region", { name: "Recent progression" }),
+    );
+
+    expect(recentProgression.queryByText("C")).not.toBeInTheDocument();
+    expect(recentProgression.queryByText("F")).not.toBeInTheDocument();
+  });
 });

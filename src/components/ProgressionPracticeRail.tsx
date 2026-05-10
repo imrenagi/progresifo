@@ -97,7 +97,9 @@ export function ProgressionPracticeRail({
         </div>
 
         {isComplete ? (
-          <p className="progression-practice__complete">Progression complete</p>
+          <p className="progression-practice__complete" role="status">
+            Progression complete
+          </p>
         ) : null}
 
         {selectedProgression ? (
