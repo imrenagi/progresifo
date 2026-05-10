@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useToneSynth } from "./audio/useToneSynth";
+import { ChordConstructionPanel } from "./components/ChordConstructionPanel";
 import { ChordReadout } from "./components/ChordReadout";
 import { PianoKeyboard } from "./components/PianoKeyboard";
 import { ProgressionCompass } from "./components/ProgressionCompass";
 import { ProgressionPracticeRail } from "./components/ProgressionPracticeRail";
 import { ProgressionTrail } from "./components/ProgressionTrail";
 import { StatusBar } from "./components/StatusBar";
+import { WorkspaceTabs } from "./components/WorkspaceTabs";
 import { useMidiInput } from "./midi/useMidiInput";
 import type { MidiNoteEvent } from "./midi/useMidiInput";
 import {
@@ -50,6 +52,7 @@ import type {
   ProgressionDisplayMode,
   ProgressionGenre,
   ProgressionSuggestion,
+  WorkspaceMode,
 } from "./music/types";
 
 const MOBILE_RANGE_QUERY = "(max-width: 767px)";
@@ -129,6 +132,12 @@ function pitchClassSignature(pitchClasses: string[]): string {
 
 export default function App() {
   const [activeNotes, setActiveNotes] = useState<ActiveNote[]>([]);
+  const [activeWorkspace, setActiveWorkspace] =
+    useState<WorkspaceMode>("progressions");
+  const [
+    chordConstructionHintedMidiNumbers,
+    setChordConstructionHintedMidiNumbers,
+  ] = useState<number[]>([]);
   const [interactionMode, setInteractionMode] =
     useState<PianoInteractionMode>("hold");
   const [progression, setProgression] = useState<ProgressionEntry[]>([]);
@@ -286,6 +295,8 @@ export default function App() {
     [midi.inputs],
   );
   const previousMidiInputIdsRef = useRef(midiInputIds);
+  const inactiveWorkspaceDetectionSignatureRef = useRef<string | null>(null);
+  const lastProgressionTrailPrimaryRef = useRef<string | null>(null);
   const matchedProgressionSignatureRef = useRef<string | null>(null);
 
   const activeMidiNumbers = useMemo(
@@ -318,6 +329,14 @@ export default function App() {
     [detection.pitchClasses, keyMode, progressionGenre, progressionKey],
   );
   const unsupportedCompassNode = useMemo<CompassNodeView | null>(() => {
+    if (
+      activeWorkspace !== "progressions" ||
+      (detectedProgressionSignature &&
+        detectedProgressionSignature === inactiveWorkspaceDetectionSignatureRef.current)
+    ) {
+      return null;
+    }
+
     if (!detection.primary || detection.pitchClasses.length === 0) {
       return null;
     }
@@ -332,7 +351,13 @@ export default function App() {
       chordName: detection.primary,
       displayName: detection.primary,
     };
-  }, [detectedCompassNodeId, detection.pitchClasses.length, detection.primary]);
+  }, [
+    activeWorkspace,
+    detectedCompassNodeId,
+    detectedProgressionSignature,
+    detection.pitchClasses.length,
+    detection.primary,
+  ]);
   const displayedCompassNode = unsupportedCompassNode ?? currentCompassNode;
   const compassSuggestions = useMemo<ProgressionSuggestion[]>(() => {
     if (unsupportedCompassNode) {
@@ -387,10 +412,14 @@ export default function App() {
   );
   const activeProgressionStep =
     selectedProgression?.steps[activeProgressionStepIndex] ?? null;
-  const hintedMidiNumbers =
+  const progressionHintedMidiNumbers =
     progressionDisplayMode === "full-progressions"
       ? activeProgressionStep?.target.midiNumbers ?? []
       : selectedSuggestion?.target.midiNumbers ?? [];
+  const hintedMidiNumbers =
+    activeWorkspace === "chord-construction"
+      ? chordConstructionHintedMidiNumbers
+      : progressionHintedMidiNumbers;
 
   const handleCompassSuggestionSelect = useCallback(
     (suggestionId: string) => {
@@ -454,12 +483,37 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (activeWorkspace !== "progressions") {
+      lastProgressionTrailPrimaryRef.current = detection.primary;
+      return;
+    }
+
+    if (detection.primary === lastProgressionTrailPrimaryRef.current) {
+      return;
+    }
+
+    lastProgressionTrailPrimaryRef.current = detection.primary;
     setProgression((current) =>
       addChordToProgression(current, detection.primary, Date.now()),
     );
-  }, [detection.primary]);
+  }, [activeWorkspace, detection.primary]);
 
   useEffect(() => {
+    if (activeWorkspace !== "progressions") {
+      inactiveWorkspaceDetectionSignatureRef.current =
+        detectedProgressionSignature;
+      return;
+    }
+
+    if (
+      detectedProgressionSignature &&
+      detectedProgressionSignature === inactiveWorkspaceDetectionSignatureRef.current
+    ) {
+      return;
+    }
+
+    inactiveWorkspaceDetectionSignatureRef.current = null;
+
     if (
       currentCompassNode &&
       findMatchingSuggestion(compassSuggestions, detection.pitchClasses)
@@ -493,9 +547,11 @@ export default function App() {
       );
     });
   }, [
+    activeWorkspace,
     compassSuggestions,
     currentCompassNode,
     detectedCompassNodeId,
+    detectedProgressionSignature,
     detection.primary,
     detection.pitchClasses,
     keyMode,
@@ -504,11 +560,19 @@ export default function App() {
   ]);
 
   useEffect(() => {
+    if (activeWorkspace !== "progressions") {
+      return;
+    }
+
     setSelectedSuggestionId(compassSuggestions[0]?.id ?? null);
     setMatchedSuggestionId(null);
   }, [compassSuggestions]);
 
   useEffect(() => {
+    if (activeWorkspace !== "progressions") {
+      return;
+    }
+
     if (
       !pendingMatchedNodeId ||
       !detectedCompassNodeId ||
@@ -519,9 +583,17 @@ export default function App() {
 
     setMatchedSuggestionId(null);
     setPendingMatchedNodeId(null);
-  }, [detectedCompassNodeId, pendingMatchedNodeId]);
+  }, [activeWorkspace, detectedCompassNodeId, pendingMatchedNodeId]);
 
   useEffect(() => {
+    if (
+      activeWorkspace !== "progressions" ||
+      (detectedProgressionSignature &&
+        detectedProgressionSignature === inactiveWorkspaceDetectionSignatureRef.current)
+    ) {
+      return;
+    }
+
     if (compassSuggestions.length === 0 || detection.pitchClasses.length === 0) {
       return;
     }
@@ -538,12 +610,18 @@ export default function App() {
     setMatchedSuggestionId(matchedSuggestion.id);
     setPendingMatchedNodeId(matchedSuggestion.nodeId);
   }, [
+    activeWorkspace,
     compassSuggestions,
+    detectedProgressionSignature,
     detection.pitchClasses,
     matchedSuggestionId,
   ]);
 
   useEffect(() => {
+    if (activeWorkspace !== "progressions") {
+      return;
+    }
+
     if (!pendingMatchedNodeId) {
       return;
     }
@@ -564,15 +642,23 @@ export default function App() {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [keyMode, pendingMatchedNodeId, progressionGenre, progressionKey]);
+  }, [
+    activeWorkspace,
+    keyMode,
+    pendingMatchedNodeId,
+    progressionGenre,
+    progressionKey,
+  ]);
 
   useEffect(() => {
     if (
+      activeWorkspace !== "progressions" ||
       progressionDisplayMode !== "full-progressions" ||
       !selectedProgression ||
       !activeProgressionStep
     ) {
-      matchedProgressionSignatureRef.current = null;
+      matchedProgressionSignatureRef.current =
+        activeWorkspace === "progressions" ? null : detectedProgressionSignature;
       setMatchedProgressionStepIndex(null);
       return;
     }
@@ -628,6 +714,7 @@ export default function App() {
       setMatchedProgressionStepIndex(null);
     };
   }, [
+    activeWorkspace,
     activeProgressionStep,
     activeProgressionStepIndex,
     detectedProgressionSignature,
@@ -769,104 +856,140 @@ export default function App() {
 
       <section className="app-workspace" aria-label="Piano chord learning">
         <div className="app-workspace__readout">
-          <section className="progression-controls" aria-label="Progression settings">
-            <label className="progression-controls__field">
-              <span>Genre</span>
-              <select
-                aria-label="Progression genre"
-                value={progressionGenre}
-                onChange={(event) => {
-                  const nextGenre = event.target.value as ProgressionGenre;
-
-                  resetCompass();
-                  resetProgressionPractice(nextGenre, keyMode);
-                  setProgressionGenre(nextGenre);
-                }}
-              >
-                {PROGRESSION_GENRES.map((genre) => (
-                  <option key={genre} value={genre}>
-                    {genreLabel(genre)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="progression-controls__field">
-              <span>Key</span>
-              <select
-                aria-label="Progression key"
-                value={progressionKey}
-                onChange={(event) => {
-                  resetCompass();
-                  resetProgressionPractice(progressionGenre, keyMode);
-                  setProgressionKey(event.target.value);
-                }}
-              >
-                {KEY_ROOTS.map((keyRoot) => (
-                  <option key={keyRoot} value={keyRoot}>
-                    {keyRoot}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="progression-controls__field">
-              <span>Mode</span>
-              <select
-                aria-label="Key mode"
-                value={keyMode}
-                onChange={(event) => {
-                  const nextKeyMode = event.target.value as KeyMode;
-
-                  resetCompass();
-                  resetProgressionPractice(progressionGenre, nextKeyMode);
-                  setKeyMode(nextKeyMode);
-                }}
-              >
-                <option value="major">Major</option>
-                <option value="minor">Minor</option>
-              </select>
-            </label>
-          </section>
+          <WorkspaceTabs
+            activeWorkspace={activeWorkspace}
+            onWorkspaceChange={setActiveWorkspace}
+          />
           <div
-            className="progression-mode-toggle"
-            aria-label="Progression display mode"
-            role="group"
+            aria-labelledby="workspace-tab-progressions"
+            hidden={activeWorkspace !== "progressions"}
+            id="workspace-panel-progressions"
+            role="tabpanel"
           >
-            <button
-              aria-pressed={progressionDisplayMode === "next-moves"}
-              onClick={() => setProgressionDisplayMode("next-moves")}
-              type="button"
-            >
-              Next moves
-            </button>
-            <button
-              aria-pressed={progressionDisplayMode === "full-progressions"}
-              onClick={() => setProgressionDisplayMode("full-progressions")}
-              type="button"
-            >
-              Full progressions
-            </button>
+            {activeWorkspace === "progressions" ? (
+              <>
+              <section
+                className="progression-controls"
+                aria-label="Progression settings"
+              >
+                <label className="progression-controls__field">
+                  <span>Genre</span>
+                  <select
+                    aria-label="Progression genre"
+                    value={progressionGenre}
+                    onChange={(event) => {
+                      const nextGenre = event.target.value as ProgressionGenre;
+
+                      resetCompass();
+                      resetProgressionPractice(nextGenre, keyMode);
+                      setProgressionGenre(nextGenre);
+                    }}
+                  >
+                    {PROGRESSION_GENRES.map((genre) => (
+                      <option key={genre} value={genre}>
+                        {genreLabel(genre)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="progression-controls__field">
+                  <span>Key</span>
+                  <select
+                    aria-label="Progression key"
+                    value={progressionKey}
+                    onChange={(event) => {
+                      resetCompass();
+                      resetProgressionPractice(progressionGenre, keyMode);
+                      setProgressionKey(event.target.value);
+                    }}
+                  >
+                    {KEY_ROOTS.map((keyRoot) => (
+                      <option key={keyRoot} value={keyRoot}>
+                        {keyRoot}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="progression-controls__field">
+                  <span>Mode</span>
+                  <select
+                    aria-label="Key mode"
+                    value={keyMode}
+                    onChange={(event) => {
+                      const nextKeyMode = event.target.value as KeyMode;
+
+                      resetCompass();
+                      resetProgressionPractice(progressionGenre, nextKeyMode);
+                      setKeyMode(nextKeyMode);
+                    }}
+                  >
+                    <option value="major">Major</option>
+                    <option value="minor">Minor</option>
+                  </select>
+                </label>
+              </section>
+              <div
+                className="progression-mode-toggle"
+                aria-label="Progression display mode"
+                role="group"
+              >
+                <button
+                  aria-pressed={progressionDisplayMode === "next-moves"}
+                  onClick={() => setProgressionDisplayMode("next-moves")}
+                  type="button"
+                >
+                  Next moves
+                </button>
+                <button
+                  aria-pressed={progressionDisplayMode === "full-progressions"}
+                  onClick={() =>
+                    setProgressionDisplayMode("full-progressions")
+                  }
+                  type="button"
+                >
+                  Full progressions
+                </button>
+              </div>
+              <ChordReadout detection={detection} displayNotes={displayNotes} />
+              {progressionDisplayMode === "next-moves" ? (
+                <ProgressionCompass
+                  currentNode={displayedCompassNode}
+                  matchedSuggestionId={matchedSuggestionId}
+                  onSuggestionSelect={handleCompassSuggestionSelect}
+                  selectedSuggestionId={selectedSuggestion?.id ?? null}
+                  suggestions={compassSuggestions}
+                />
+              ) : (
+                <ProgressionPracticeRail
+                  activeStepIndex={activeProgressionStepIndex}
+                  isComplete={isProgressionComplete}
+                  matchedStepIndex={matchedProgressionStepIndex}
+                  onProgressionSelect={handleProgressionSelect}
+                  onStepSelect={handleProgressionStepSelect}
+                  progressions={resolvedProgressions}
+                  selectedProgression={selectedProgression}
+                />
+              )}
+              <ProgressionTrail entries={progression} />
+            </>
+            ) : null}
           </div>
-          <ChordReadout detection={detection} displayNotes={displayNotes} />
-          {progressionDisplayMode === "next-moves" ? (
-            <ProgressionCompass
-              currentNode={displayedCompassNode}
-              matchedSuggestionId={matchedSuggestionId}
-              onSuggestionSelect={handleCompassSuggestionSelect}
-              selectedSuggestionId={selectedSuggestion?.id ?? null}
-              suggestions={compassSuggestions}
-            />
-          ) : (
-            <ProgressionPracticeRail
-              activeStepIndex={activeProgressionStepIndex}
-              isComplete={isProgressionComplete}
-              matchedStepIndex={matchedProgressionStepIndex}
-              onProgressionSelect={handleProgressionSelect}
-              onStepSelect={handleProgressionStepSelect}
-              progressions={resolvedProgressions}
-              selectedProgression={selectedProgression}
-            />
-          )}
-          <ProgressionTrail entries={progression} />
+          <div
+            aria-labelledby="workspace-tab-chord-construction"
+            hidden={activeWorkspace !== "chord-construction"}
+            id="workspace-panel-chord-construction"
+            role="tabpanel"
+          >
+            {activeWorkspace === "chord-construction" ? (
+              <ChordConstructionPanel
+                activePitchClasses={detection.pitchClasses}
+                appKeyMode={keyMode}
+                appKeyRoot={progressionKey}
+                onTargetChange={setChordConstructionHintedMidiNumbers}
+                targetRange={range}
+              />
+            ) : null}
+          </div>
         </div>
 
         <PianoKeyboard
