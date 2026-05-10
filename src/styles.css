@@ -93,7 +93,10 @@ button {
 .chord-readout__notes,
 .chord-readout__pitch-classes,
 .progression-trail__label,
-.progression-trail__empty {
+.progression-trail__empty,
+.progression-compass__label,
+.progression-compass__heading,
+.progression-compass__empty {
   margin: 0;
 }
 
@@ -271,6 +274,83 @@ button {
   padding: 1rem;
 }
 
+.progression-compass {
+  border: 1px solid rgba(243, 245, 241, 0.1);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background: rgba(24, 28, 32, 0.86);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.2);
+}
+
+.progression-compass__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.progression-compass__label {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.progression-compass__heading {
+  margin-top: 0.35rem;
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.progression-compass__suggestions {
+  display: grid;
+  gap: 0.625rem;
+  margin-top: 0.875rem;
+}
+
+.progression-compass__card {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  border: 1px solid rgba(243, 245, 241, 0.13);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(243, 245, 241, 0.06);
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.progression-compass__card:hover,
+.progression-compass__card[data-selected="true"] {
+  border-color: rgba(242, 184, 75, 0.55);
+  background: rgba(242, 184, 75, 0.13);
+}
+
+.progression-compass__card[data-matched="true"] {
+  border-color: rgba(142, 232, 220, 0.78);
+  background: rgba(142, 232, 220, 0.16);
+}
+
+.progression-compass__card-title {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.progression-compass__meta,
+.progression-compass__keys,
+.progression-compass__reason,
+.progression-compass__empty {
+  color: var(--color-muted);
+  font-size: 0.86rem;
+}
+
+.progression-compass__keys {
+  color: var(--color-text);
+  font-weight: 750;
+}
+
 .piano-shell {
   align-self: end;
   border: 1px solid rgba(243, 245, 241, 0.1);
@@ -405,6 +485,10 @@ button {
     padding-left: 1rem;
   }
 
+  .progression-compass__suggestions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .piano-shell {
     overflow-x: hidden;
   }
@@ -430,6 +514,18 @@ button {
 
   .status-bar__segment {
     flex: 1 1 0;
+  }
+
+  .progression-compass__suggestions {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scroll-snap-type: x proximity;
+  }
+
+  .progression-compass__card {
+    flex: 0 0 min(17rem, 82vw);
+    scroll-snap-align: start;
   }
 
   .piano-shell {
