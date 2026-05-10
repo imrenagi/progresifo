@@ -94,7 +94,10 @@ describe("ProgressionPracticeRail", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lift Progression" }));
     expect(onProgressionSelect).toHaveBeenCalledWith("pop-lift");
 
-    fireEvent.click(screen.getByRole("button", { name: "Step 2: V7 (G7)" }));
+    const secondStep = screen.getByRole("button", { name: "2 V7 (G7)" });
+    expect(secondStep).toHaveAccessibleDescription("G4 B4 D5 F5");
+
+    fireEvent.click(secondStep);
     expect(onStepSelect).toHaveBeenCalledWith(1);
   });
 
@@ -113,14 +116,13 @@ describe("ProgressionPracticeRail", () => {
 
     expect(screen.getByText("Progression complete")).toBeInTheDocument();
 
-    const matchedStep = screen.getByRole("button", { name: "Step 1: I (C)" });
-    expect(matchedStep).toHaveAccessibleDescription("Matched");
+    const matchedStep = screen.getByRole("button", { name: "1 I (C)" });
+    expect(matchedStep).toHaveAccessibleDescription(/C4 E4 G4.*Matched/);
     expect(within(matchedStep).getByText("Matched")).toBeInTheDocument();
-    expect(matchedStep).toHaveAttribute("data-matched", "true");
 
-    const activeStep = screen.getByRole("button", { name: "Step 2: V7 (G7)" });
+    const activeStep = screen.getByRole("button", { name: "2 V7 (G7)" });
     expect(activeStep).toHaveAttribute("aria-current", "step");
-    expect(activeStep).toHaveAttribute("data-active", "true");
+    expect(activeStep).toHaveAccessibleDescription("G4 B4 D5 F5");
   });
 
   it("renders an empty state without progressions", () => {

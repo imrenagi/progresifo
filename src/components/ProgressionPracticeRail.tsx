@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { ResolvedProgression } from "../music/types";
 
 type ProgressionPracticeRailProps = {
@@ -19,6 +20,8 @@ export function ProgressionPracticeRail({
   onProgressionSelect,
   onStepSelect,
 }: ProgressionPracticeRailProps) {
+  const idPrefix = useId();
+
   return (
     <section className="progression-practice" aria-label="Full progressions">
       <div className="progression-practice__browser">
@@ -31,11 +34,11 @@ export function ProgressionPracticeRail({
 
         {progressions.length > 0 ? (
           <div className="progression-practice__cards">
-            {progressions.map((progression) => {
+            {progressions.map((progression, index) => {
               const selected = progression.id === selectedProgression?.id;
-              const cardTitleId = `progression-practice-${progression.id}-title`;
-              const cardSequenceId = `progression-practice-${progression.id}-sequence`;
-              const cardDescriptionId = `progression-practice-${progression.id}-description`;
+              const cardTitleId = `${idPrefix}-card-${index}-title`;
+              const cardSequenceId = `${idPrefix}-card-${index}-sequence`;
+              const cardDescriptionId = `${idPrefix}-card-${index}-description`;
 
               return (
                 <button
@@ -102,28 +105,42 @@ export function ProgressionPracticeRail({
             {selectedProgression.steps.map((step, index) => {
               const active = index === activeStepIndex;
               const matched = index === matchedStepIndex;
-              const matchedStatusId = `progression-practice-${selectedProgression.id}-${index}-matched`;
+              const stepNumberId = `${idPrefix}-step-${index}-number`;
+              const stepNameId = `${idPrefix}-step-${index}-name`;
+              const stepKeysId = `${idPrefix}-step-${index}-keys`;
+              const matchedStatusId = `${idPrefix}-step-${index}-matched`;
 
               return (
                 <li key={`${step.nodeId}:${index}`}>
                   <button
                     aria-current={active ? "step" : undefined}
-                    aria-describedby={matched ? matchedStatusId : undefined}
-                    aria-label={`Step ${index + 1}: ${step.displayName}`}
+                    aria-describedby={
+                      matched ? `${stepKeysId} ${matchedStatusId}` : stepKeysId
+                    }
+                    aria-labelledby={`${stepNumberId} ${stepNameId}`}
                     className="progression-practice__step"
                     data-active={active}
                     data-matched={matched}
                     onClick={() => onStepSelect(index)}
                     type="button"
                   >
-                    <span className="progression-practice__step-number">
+                    <span
+                      className="progression-practice__step-number"
+                      id={stepNumberId}
+                    >
                       {index + 1}
                     </span>
                     <span className="progression-practice__step-body">
-                      <span className="progression-practice__step-name">
+                      <span
+                        className="progression-practice__step-name"
+                        id={stepNameId}
+                      >
                         {step.displayName}
                       </span>
-                      <span className="progression-practice__keys">
+                      <span
+                        className="progression-practice__keys"
+                        id={stepKeysId}
+                      >
                         {step.target.noteNames.join(" ")}
                       </span>
                     </span>
