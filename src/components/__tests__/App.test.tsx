@@ -504,6 +504,49 @@ describe("App", () => {
     }
   });
 
+  it("clears a canceled full progression match when notes are released before confirmation", () => {
+    vi.useFakeTimers();
+
+    try {
+      render(<App />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Full progressions" }));
+
+      const c4 = screen.getByRole("button", { name: "C4" });
+      const e4 = screen.getByRole("button", { name: "E4" });
+      const g4 = screen.getByRole("button", { name: "G4" });
+
+      fireEvent.pointerDown(c4, { pointerId: 1 });
+      fireEvent.pointerDown(e4, { pointerId: 2 });
+      fireEvent.pointerDown(g4, { pointerId: 3 });
+
+      expect(screen.getByRole("button", { name: "1 I (C)" })).toHaveAccessibleDescription(
+        /C4 E4 G4.*Matched/,
+      );
+
+      fireEvent.pointerUp(g4, { pointerId: 3 });
+
+      expect(screen.getByRole("button", { name: "1 I (C)" })).toHaveAccessibleDescription(
+        "C4 E4 G4",
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+
+      expect(screen.getByRole("button", { name: "1 I (C)" })).toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+      expect(screen.getByRole("button", { name: "2 V7 (G7)" })).not.toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("marks completion after the final full progression step and loops to the first step", () => {
     vi.useFakeTimers();
 
@@ -543,6 +586,96 @@ describe("App", () => {
 
       expect(screen.queryByText("Progression complete")).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: "1 I (C)" })).toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not rematch the first step after looping while the final tonic remains held", () => {
+    vi.useFakeTimers();
+
+    try {
+      render(<App />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Full progressions" }));
+      fireEvent.click(screen.getByRole("button", { name: "Lift Progression" }));
+      fireEvent.click(screen.getByRole("button", { name: "4 I (C)" }));
+
+      fireEvent.pointerDown(screen.getByRole("button", { name: "C4" }), {
+        pointerId: 1,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "E4" }), {
+        pointerId: 2,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "G4" }), {
+        pointerId: 3,
+      });
+
+      expect(screen.getByRole("button", { name: "4 I (C)" })).toHaveAccessibleDescription(
+        /C4 E4 G4.*Matched/,
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+
+      expect(screen.getByText("Progression complete")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "1 I (C)" })).toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+      expect(screen.getByRole("button", { name: "1 I (C)" })).toHaveAccessibleDescription(
+        "C4 E4 G4",
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+
+      expect(screen.queryByText("Progression complete")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "1 I (C)" })).toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+      expect(screen.getByRole("button", { name: "2 IV (F)" })).not.toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not auto-advance full progression steps while in next moves mode", () => {
+    vi.useFakeTimers();
+
+    try {
+      render(<App />);
+
+      fireEvent.pointerDown(screen.getByRole("button", { name: "C4" }), {
+        pointerId: 1,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "E4" }), {
+        pointerId: 2,
+      });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "G4" }), {
+        pointerId: 3,
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: "Full progressions" }));
+
+      expect(screen.getByRole("button", { name: "1 I (C)" })).toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+      expect(screen.getByRole("button", { name: "2 V7 (G7)" })).not.toHaveAttribute(
         "aria-current",
         "step",
       );

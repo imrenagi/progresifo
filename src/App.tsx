@@ -563,11 +563,26 @@ export default function App() {
     if (
       progressionDisplayMode !== "full-progressions" ||
       !selectedProgression ||
-      !activeProgressionStep ||
-      detection.pitchClasses.length === 0
+      !activeProgressionStep
     ) {
       matchedProgressionSignatureRef.current = null;
+      setMatchedProgressionStepIndex(null);
       return;
+    }
+
+    if (detection.pitchClasses.length === 0) {
+      matchedProgressionSignatureRef.current = null;
+      setMatchedProgressionStepIndex(null);
+      return;
+    }
+
+    const signature = pitchClassSignature(detection.pitchClasses);
+
+    if (
+      matchedProgressionSignatureRef.current !== null &&
+      matchedProgressionSignatureRef.current !== signature
+    ) {
+      matchedProgressionSignatureRef.current = null;
     }
 
     if (
@@ -576,13 +591,9 @@ export default function App() {
         detection.pitchClasses,
       )
     ) {
-      matchedProgressionSignatureRef.current = null;
+      setMatchedProgressionStepIndex(null);
       return;
     }
-
-    const signature = `${selectedProgression.id}:${activeProgressionStepIndex}:${pitchClassSignature(
-      detection.pitchClasses,
-    )}`;
 
     if (matchedProgressionSignatureRef.current === signature) {
       return;
@@ -607,6 +618,7 @@ export default function App() {
 
     return () => {
       window.clearTimeout(timeoutId);
+      setMatchedProgressionStepIndex(null);
     };
   }, [
     activeProgressionStep,
