@@ -85,6 +85,32 @@ button {
   text-transform: none;
 }
 
+.progression-mode-toggle {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(243, 245, 241, 0.13);
+  border-radius: 0.5rem;
+  background: rgba(243, 245, 241, 0.06);
+}
+
+.progression-mode-toggle button {
+  min-height: 2.5rem;
+  border: 0;
+  padding: 0 0.875rem;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+
+.progression-mode-toggle button[aria-pressed="true"] {
+  background: rgba(242, 184, 75, 0.16);
+  color: var(--color-text);
+}
+
 .status-bar {
   display: grid;
   gap: 0.875rem;

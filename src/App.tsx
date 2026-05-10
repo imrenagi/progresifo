@@ -4,6 +4,7 @@ import { useToneSynth } from "./audio/useToneSynth";
 import { ChordReadout } from "./components/ChordReadout";
 import { PianoKeyboard } from "./components/PianoKeyboard";
 import { ProgressionCompass } from "./components/ProgressionCompass";
+import { ProgressionPracticeRail } from "./components/ProgressionPracticeRail";
 import { ProgressionTrail } from "./components/ProgressionTrail";
 import { StatusBar } from "./components/StatusBar";
 import { useMidiInput } from "./midi/useMidiInput";
@@ -33,6 +34,11 @@ import {
   getStarterSuggestions,
 } from "./music/progressionCompass";
 import { addChordToProgression, type ProgressionEntry } from "./music/progression";
+import {
+  getFirstProgressionId,
+  getResolvedProgression,
+  getResolvedProgressions,
+} from "./music/progressionLibrary";
 import type {
   ActiveNote,
   ActiveNoteSource,
@@ -40,6 +46,7 @@ import type {
   KeyMode,
   PianoInteractionMode,
   PianoRange,
+  ProgressionDisplayMode,
   ProgressionGenre,
   ProgressionSuggestion,
 } from "./music/types";
@@ -124,6 +131,16 @@ export default function App() {
     useState<ProgressionGenre>("pop");
   const [progressionKey, setProgressionKey] = useState("C");
   const [keyMode, setKeyMode] = useState<KeyMode>("major");
+  const [progressionDisplayMode, setProgressionDisplayMode] =
+    useState<ProgressionDisplayMode>("next-moves");
+  const [selectedProgressionId, setSelectedProgressionId] = useState<
+    string | null
+  >(() => getFirstProgressionId("pop", "major"));
+  const [activeProgressionStepIndex, setActiveProgressionStepIndex] =
+    useState(0);
+  const [matchedProgressionStepIndex, setMatchedProgressionStepIndex] =
+    useState<number | null>(null);
+  const [isProgressionComplete, setIsProgressionComplete] = useState(false);
   const [currentCompassNode, setCurrentCompassNode] =
     useState<CompassNodeView | null>(null);
   const [selectedSuggestionId, setSelectedSuggestionId] =
@@ -324,6 +341,34 @@ export default function App() {
     ) ??
     compassSuggestions[0] ??
     null;
+  const resolvedProgressions = useMemo(
+    () => getResolvedProgressions(progressionGenre, keyMode, progressionKey),
+    [keyMode, progressionGenre, progressionKey],
+  );
+  const selectedProgression = useMemo(
+    () =>
+      getResolvedProgression(
+        progressionGenre,
+        keyMode,
+        progressionKey,
+        selectedProgressionId,
+      ) ??
+      resolvedProgressions[0] ??
+      null,
+    [
+      keyMode,
+      progressionGenre,
+      progressionKey,
+      resolvedProgressions,
+      selectedProgressionId,
+    ],
+  );
+  const activeProgressionStep =
+    selectedProgression?.steps[activeProgressionStepIndex] ?? null;
+  const hintedMidiNumbers =
+    progressionDisplayMode === "full-progressions"
+      ? activeProgressionStep?.target.midiNumbers ?? []
+      : selectedSuggestion?.target.midiNumbers ?? [];
 
   const handleCompassSuggestionSelect = useCallback(
     (suggestionId: string) => {
@@ -352,6 +397,18 @@ export default function App() {
       progressionKey,
     ],
   );
+  const handleProgressionSelect = useCallback((progressionId: string) => {
+    setSelectedProgressionId(progressionId);
+    setActiveProgressionStepIndex(0);
+    setMatchedProgressionStepIndex(null);
+    setIsProgressionComplete(false);
+  }, []);
+
+  const handleProgressionStepSelect = useCallback((stepIndex: number) => {
+    setActiveProgressionStepIndex(stepIndex);
+    setMatchedProgressionStepIndex(null);
+    setIsProgressionComplete(false);
+  }, []);
 
   useEffect(() => {
     if (
@@ -490,6 +547,22 @@ export default function App() {
   useEffect(() => {
     setCurrentCompassNode(null);
   }, [keyMode, progressionGenre, progressionKey]);
+
+  useEffect(() => {
+    setSelectedProgressionId(getFirstProgressionId(progressionGenre, keyMode));
+    setActiveProgressionStepIndex(0);
+    setMatchedProgressionStepIndex(null);
+    setIsProgressionComplete(false);
+  }, [keyMode, progressionGenre, progressionKey]);
+
+  useEffect(() => {
+    if (
+      selectedProgression &&
+      activeProgressionStepIndex >= selectedProgression.steps.length
+    ) {
+      setActiveProgressionStepIndex(0);
+    }
+  }, [activeProgressionStepIndex, selectedProgression]);
 
   useEffect(() => {
     if (interactionMode !== "latch") {
@@ -641,20 +714,51 @@ export default function App() {
               </select>
             </label>
           </section>
+          <div
+            className="progression-mode-toggle"
+            aria-label="Progression display mode"
+          >
+            <button
+              aria-pressed={progressionDisplayMode === "next-moves"}
+              onClick={() => setProgressionDisplayMode("next-moves")}
+              type="button"
+            >
+              Next moves
+            </button>
+            <button
+              aria-pressed={progressionDisplayMode === "full-progressions"}
+              onClick={() => setProgressionDisplayMode("full-progressions")}
+              type="button"
+            >
+              Full progressions
+            </button>
+          </div>
           <ChordReadout detection={detection} displayNotes={displayNotes} />
-          <ProgressionCompass
-            currentNode={displayedCompassNode}
-            matchedSuggestionId={matchedSuggestionId}
-            onSuggestionSelect={handleCompassSuggestionSelect}
-            selectedSuggestionId={selectedSuggestion?.id ?? null}
-            suggestions={compassSuggestions}
-          />
+          {progressionDisplayMode === "next-moves" ? (
+            <ProgressionCompass
+              currentNode={displayedCompassNode}
+              matchedSuggestionId={matchedSuggestionId}
+              onSuggestionSelect={handleCompassSuggestionSelect}
+              selectedSuggestionId={selectedSuggestion?.id ?? null}
+              suggestions={compassSuggestions}
+            />
+          ) : (
+            <ProgressionPracticeRail
+              activeStepIndex={activeProgressionStepIndex}
+              isComplete={isProgressionComplete}
+              matchedStepIndex={matchedProgressionStepIndex}
+              onProgressionSelect={handleProgressionSelect}
+              onStepSelect={handleProgressionStepSelect}
+              progressions={resolvedProgressions}
+              selectedProgression={selectedProgression}
+            />
+          )}
           <ProgressionTrail entries={progression} />
         </div>
 
         <PianoKeyboard
           activeMidiNumbers={activeMidiNumbers}
-          hintedMidiNumbers={selectedSuggestion?.target.midiNumbers ?? []}
+          hintedMidiNumbers={hintedMidiNumbers}
           interactionMode={interactionMode}
           latchedMidiNumbers={latchedPointerMidiNumbers}
           onNoteDown={(midiNumber) => handleNoteDown(midiNumber, "pointer")}

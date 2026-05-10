@@ -349,6 +349,85 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "I (C)" })).toBeInTheDocument();
   });
 
+  it("toggles from next moves to full progressions", () => {
+    render(<App />);
+
+    expect(screen.getByRole("button", { name: "Next moves" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Full progressions" }));
+
+    expect(
+      screen.getByRole("region", { name: "Full progressions" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Axis Progression" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByText("I (C) - V7 (G7) - vi (Am) - IV (F)")).toBeInTheDocument();
+
+    const firstStep = screen.getByRole("button", { name: "1 I (C)" });
+    expect(firstStep).toHaveAttribute("aria-current", "step");
+    expect(firstStep).toHaveAccessibleDescription("C4 E4 G4");
+  });
+
+  it("uses the active full progression step as the piano hint", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Full progressions" }));
+
+    expect(screen.getByRole("button", { name: "C4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "E4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "G4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "2 V7 (G7)" }));
+
+    expect(screen.getByRole("button", { name: "G4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "B4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "D5" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "F5" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+  });
+
+  it("resets selected full progression when key mode changes", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Full progressions" }));
+    fireEvent.change(screen.getByLabelText("Key mode"), {
+      target: { value: "minor" },
+    });
+
+    expect(screen.getByRole("button", { name: "Minor Loop" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    const firstStep = screen.getByRole("button", { name: "1 i (Cm)" });
+    expect(firstStep).toHaveAttribute("aria-current", "step");
+    expect(firstStep).toHaveAccessibleDescription("C4 D#4 G4");
+  });
+
   it("updates starter ideas when key and mode change", () => {
     render(<App />);
 
