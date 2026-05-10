@@ -20,6 +20,7 @@ import {
   FULL_PIANO_RANGE,
   MOBILE_PIANO_RANGE,
 } from "./music/notes";
+import { PROGRESSION_GENRES } from "./music/progressionGraph";
 import {
   buildCompassNodeView,
   buildProgressionSuggestions,
@@ -39,14 +40,6 @@ import type {
 
 const MOBILE_RANGE_QUERY = "(max-width: 767px)";
 const KEY_ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-const GENRE_OPTIONS: ProgressionGenre[] = [
-  "pop",
-  "jazz",
-  "blues",
-  "classical",
-  "gospel",
-  "neo-soul",
-];
 
 function genreLabel(genre: ProgressionGenre): string {
   return genre
@@ -106,6 +99,12 @@ export default function App() {
     triggerAttack,
     triggerRelease,
   } = synth;
+
+  const resetCompass = useCallback(() => {
+    setCurrentCompassNode(null);
+    setSelectedSuggestionId(null);
+    setMatchedSuggestionId(null);
+  }, []);
 
   const handleNoteDown = useCallback(
     (
@@ -414,11 +413,12 @@ export default function App() {
               <select
                 aria-label="Progression genre"
                 value={progressionGenre}
-                onChange={(event) =>
-                  setProgressionGenre(event.target.value as ProgressionGenre)
-                }
+                onChange={(event) => {
+                  resetCompass();
+                  setProgressionGenre(event.target.value as ProgressionGenre);
+                }}
               >
-                {GENRE_OPTIONS.map((genre) => (
+                {PROGRESSION_GENRES.map((genre) => (
                   <option key={genre} value={genre}>
                     {genreLabel(genre)}
                   </option>
@@ -430,7 +430,10 @@ export default function App() {
               <select
                 aria-label="Progression key"
                 value={progressionKey}
-                onChange={(event) => setProgressionKey(event.target.value)}
+                onChange={(event) => {
+                  resetCompass();
+                  setProgressionKey(event.target.value);
+                }}
               >
                 {KEY_ROOTS.map((keyRoot) => (
                   <option key={keyRoot} value={keyRoot}>
@@ -444,7 +447,10 @@ export default function App() {
               <select
                 aria-label="Key mode"
                 value={keyMode}
-                onChange={(event) => setKeyMode(event.target.value as KeyMode)}
+                onChange={(event) => {
+                  resetCompass();
+                  setKeyMode(event.target.value as KeyMode);
+                }}
               >
                 <option value="major">Major</option>
                 <option value="minor">Minor</option>

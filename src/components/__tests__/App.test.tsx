@@ -371,4 +371,17 @@ describe("App", () => {
     expect(screen.getAllByText("I (C)").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "vi (Am)" })).toBeInTheDocument();
   });
+
+  it("resets selected starter before changing mode", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "I (C)" }));
+
+    expect(() => {
+      fireEvent.change(screen.getByLabelText("Key mode"), {
+        target: { value: "minor" },
+      });
+    }).not.toThrow();
+    expect(screen.getByRole("button", { name: "i (Cm)" })).toBeInTheDocument();
+  });
 });
