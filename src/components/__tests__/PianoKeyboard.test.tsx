@@ -43,6 +43,10 @@ describe("PianoKeyboard", () => {
       "data-hinted",
       "true",
     );
+    expect(screen.getByRole("button", { name: "G4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
     expect(screen.getByRole("button", { name: "D4" })).toHaveAttribute(
       "data-hinted",
       "false",
