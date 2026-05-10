@@ -336,4 +336,39 @@ describe("App", () => {
     expect(mocks.triggerRelease).toHaveBeenCalledTimes(1);
     expect(mocks.triggerRelease).toHaveBeenLastCalledWith(60);
   });
+
+  it("shows genre and key controls with starter suggestions", () => {
+    render(<App />);
+
+    expect(screen.getByLabelText("Progression genre")).toHaveValue("pop");
+    expect(screen.getByLabelText("Progression key")).toHaveValue("C");
+    expect(screen.getByLabelText("Key mode")).toHaveValue("major");
+    expect(
+      screen.getByRole("region", { name: "Progression compass" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "I (C)" })).toBeInTheDocument();
+  });
+
+  it("updates starter ideas when key and mode change", () => {
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText("Progression key"), {
+      target: { value: "D" },
+    });
+    fireEvent.change(screen.getByLabelText("Key mode"), {
+      target: { value: "minor" },
+    });
+
+    expect(screen.getByRole("button", { name: "i (Dm)" })).toBeInTheDocument();
+  });
+
+  it("uses a selected starter as the current compass node", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "I (C)" }));
+
+    expect(screen.getByText("You are here")).toBeInTheDocument();
+    expect(screen.getAllByText("I (C)").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "vi (Am)" })).toBeInTheDocument();
+  });
 });

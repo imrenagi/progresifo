@@ -3,6 +3,7 @@ import { flushSync } from "react-dom";
 import { useToneSynth } from "./audio/useToneSynth";
 import { ChordReadout } from "./components/ChordReadout";
 import { PianoKeyboard } from "./components/PianoKeyboard";
+import { ProgressionCompass } from "./components/ProgressionCompass";
 import { ProgressionTrail } from "./components/ProgressionTrail";
 import { StatusBar } from "./components/StatusBar";
 import { useMidiInput } from "./midi/useMidiInput";
@@ -19,15 +20,40 @@ import {
   FULL_PIANO_RANGE,
   MOBILE_PIANO_RANGE,
 } from "./music/notes";
+import {
+  buildCompassNodeView,
+  buildProgressionSuggestions,
+  getStarterSuggestions,
+} from "./music/progressionCompass";
 import { addChordToProgression, type ProgressionEntry } from "./music/progression";
 import type {
   ActiveNote,
   ActiveNoteSource,
+  CompassNodeView,
+  KeyMode,
   PianoInteractionMode,
   PianoRange,
+  ProgressionGenre,
+  ProgressionSuggestion,
 } from "./music/types";
 
 const MOBILE_RANGE_QUERY = "(max-width: 767px)";
+const KEY_ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const GENRE_OPTIONS: ProgressionGenre[] = [
+  "pop",
+  "jazz",
+  "blues",
+  "classical",
+  "gospel",
+  "neo-soul",
+];
+
+function genreLabel(genre: ProgressionGenre): string {
+  return genre
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("-");
+}
 
 function getResponsiveRange(): PianoRange {
   if (
@@ -60,6 +86,17 @@ export default function App() {
   const [interactionMode, setInteractionMode] =
     useState<PianoInteractionMode>("hold");
   const [progression, setProgression] = useState<ProgressionEntry[]>([]);
+  const [progressionGenre, setProgressionGenre] =
+    useState<ProgressionGenre>("pop");
+  const [progressionKey, setProgressionKey] = useState("C");
+  const [keyMode, setKeyMode] = useState<KeyMode>("major");
+  const [currentCompassNode, setCurrentCompassNode] =
+    useState<CompassNodeView | null>(null);
+  const [selectedSuggestionId, setSelectedSuggestionId] =
+    useState<string | null>(null);
+  const [matchedSuggestionId, setMatchedSuggestionId] = useState<string | null>(
+    null,
+  );
   const [range, setRange] = useState<PianoRange>(() => getResponsiveRange());
   const synth = useToneSynth();
   const {
@@ -187,6 +224,53 @@ export default function App() {
   );
   const displayNotes = useMemo(() => getDisplayNotes(activeNotes), [activeNotes]);
   const detection = useMemo(() => detectChord(activeNotes), [activeNotes]);
+  const compassSuggestions = useMemo<ProgressionSuggestion[]>(() => {
+    if (!currentCompassNode) {
+      return getStarterSuggestions(progressionGenre, keyMode, progressionKey);
+    }
+
+    return buildProgressionSuggestions(
+      progressionGenre,
+      keyMode,
+      progressionKey,
+      currentCompassNode.nodeId,
+    );
+  }, [currentCompassNode, keyMode, progressionGenre, progressionKey]);
+
+  const selectedSuggestion =
+    compassSuggestions.find(
+      (suggestion) => suggestion.id === selectedSuggestionId,
+    ) ??
+    compassSuggestions[0] ??
+    null;
+
+  const handleCompassSuggestionSelect = useCallback(
+    (suggestionId: string) => {
+      setSelectedSuggestionId(suggestionId);
+
+      const suggestion = compassSuggestions.find(
+        (candidate) => candidate.id === suggestionId,
+      );
+
+      if (!currentCompassNode && suggestion) {
+        setCurrentCompassNode(
+          buildCompassNodeView(
+            progressionGenre,
+            keyMode,
+            progressionKey,
+            suggestion.nodeId,
+          ),
+        );
+      }
+    },
+    [
+      compassSuggestions,
+      currentCompassNode,
+      keyMode,
+      progressionGenre,
+      progressionKey,
+    ],
+  );
 
   useEffect(() => {
     if (
@@ -214,6 +298,15 @@ export default function App() {
       addChordToProgression(current, detection.primary, Date.now()),
     );
   }, [detection.primary]);
+
+  useEffect(() => {
+    setSelectedSuggestionId(compassSuggestions[0]?.id ?? null);
+    setMatchedSuggestionId(null);
+  }, [compassSuggestions]);
+
+  useEffect(() => {
+    setCurrentCompassNode(null);
+  }, [keyMode, progressionGenre, progressionKey]);
 
   useEffect(() => {
     if (interactionMode !== "latch") {
@@ -315,12 +408,63 @@ export default function App() {
 
       <section className="app-workspace" aria-label="Piano chord learning">
         <div className="app-workspace__readout">
+          <section className="progression-controls" aria-label="Progression settings">
+            <label className="progression-controls__field">
+              <span>Genre</span>
+              <select
+                aria-label="Progression genre"
+                value={progressionGenre}
+                onChange={(event) =>
+                  setProgressionGenre(event.target.value as ProgressionGenre)
+                }
+              >
+                {GENRE_OPTIONS.map((genre) => (
+                  <option key={genre} value={genre}>
+                    {genreLabel(genre)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="progression-controls__field">
+              <span>Key</span>
+              <select
+                aria-label="Progression key"
+                value={progressionKey}
+                onChange={(event) => setProgressionKey(event.target.value)}
+              >
+                {KEY_ROOTS.map((keyRoot) => (
+                  <option key={keyRoot} value={keyRoot}>
+                    {keyRoot}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="progression-controls__field">
+              <span>Mode</span>
+              <select
+                aria-label="Key mode"
+                value={keyMode}
+                onChange={(event) => setKeyMode(event.target.value as KeyMode)}
+              >
+                <option value="major">Major</option>
+                <option value="minor">Minor</option>
+              </select>
+            </label>
+          </section>
           <ChordReadout detection={detection} displayNotes={displayNotes} />
+          <ProgressionCompass
+            currentNode={currentCompassNode}
+            matchedSuggestionId={matchedSuggestionId}
+            onSuggestionSelect={handleCompassSuggestionSelect}
+            selectedSuggestionId={selectedSuggestion?.id ?? null}
+            suggestions={compassSuggestions}
+          />
           <ProgressionTrail entries={progression} />
         </div>
 
         <PianoKeyboard
           activeMidiNumbers={activeMidiNumbers}
+          hintedMidiNumbers={selectedSuggestion?.target.midiNumbers ?? []}
           interactionMode={interactionMode}
           latchedMidiNumbers={latchedPointerMidiNumbers}
           onNoteDown={(midiNumber) => handleNoteDown(midiNumber, "pointer")}
