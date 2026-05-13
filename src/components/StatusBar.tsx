@@ -74,7 +74,11 @@ export function StatusBar({
       </div>
 
       <div className="status-bar__controls">
-        <div className="status-bar__segmented" aria-label="Mouse interaction mode">
+        <div
+          className="status-bar__segmented"
+          aria-label="Mouse interaction mode"
+          data-onboarding-target="interaction-mode"
+        >
           <MousePointer2 aria-hidden="true" size={16} />
           <button
             aria-label="Hold mode"
@@ -97,6 +101,7 @@ export function StatusBar({
         </div>
         <button
           className="status-bar__button"
+          data-onboarding-target="midi-status"
           onClick={onConnectMidi}
           type="button"
         >
@@ -105,6 +110,7 @@ export function StatusBar({
         </button>
         <button
           className="status-bar__button"
+          data-onboarding-target="sound-toggle"
           disabled={audioStarting}
           onClick={audioOn ? onDisableAudio : onEnableAudio}
           type="button"

@@ -3,6 +3,7 @@ import { flushSync } from "react-dom";
 import { useToneSynth } from "./audio/useToneSynth";
 import { ChordConstructionPanel } from "./components/ChordConstructionPanel";
 import { ChordReadout } from "./components/ChordReadout";
+import { OnboardingGuide } from "./components/OnboardingGuide";
 import { PianoKeyboard } from "./components/PianoKeyboard";
 import { ProgressionCompass } from "./components/ProgressionCompass";
 import { ProgressionPracticeRail } from "./components/ProgressionPracticeRail";
@@ -72,6 +73,29 @@ const KEY_ROOTS = [
 ];
 const MATCH_CONFIRMATION_MS = 600;
 const UNSUPPORTED_COMPASS_NODE_ID = "__unsupported__";
+const ONBOARDING_DISMISSED_STORAGE_KEY = "progresifo.onboardingDismissed";
+
+function shouldShowOnboarding(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    return (
+      window.localStorage.getItem(ONBOARDING_DISMISSED_STORAGE_KEY) !== "true"
+    );
+  } catch {
+    return true;
+  }
+}
+
+function persistOnboardingDismissal() {
+  try {
+    window.localStorage.setItem(ONBOARDING_DISMISSED_STORAGE_KEY, "true");
+  } catch {
+    // Dismissal should still work for the current session if storage is blocked.
+  }
+}
 
 function genreLabel(genre: ProgressionGenre): string {
   return genre
@@ -132,6 +156,7 @@ function pitchClassSignature(pitchClasses: string[]): string {
 
 export default function App() {
   const [activeNotes, setActiveNotes] = useState<ActiveNote[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(shouldShowOnboarding);
   const [activeWorkspace, setActiveWorkspace] =
     useState<WorkspaceMode>("progressions");
   const [
@@ -190,6 +215,10 @@ export default function App() {
     },
     [],
   );
+  const dismissOnboarding = useCallback(() => {
+    persistOnboardingDismissal();
+    setShowOnboarding(false);
+  }, []);
 
   const handleNoteDown = useCallback(
     (
@@ -841,7 +870,9 @@ export default function App() {
   }, [midi.status, midiInputIds, triggerRelease]);
 
   return (
-    <main className="app-shell">
+    <main
+      className={`app-shell${showOnboarding ? " app-shell--onboarding" : ""}`}
+    >
       <StatusBar
         audioStatus={audioStatus}
         midiDeviceCount={midi.inputs.length}
@@ -853,6 +884,9 @@ export default function App() {
         interactionMode={interactionMode}
         onInteractionModeChange={setInteractionMode}
       />
+      {showOnboarding ? (
+        <OnboardingGuide onDismiss={dismissOnboarding} />
+      ) : null}
 
       <section className="app-workspace" aria-label="Piano chord learning">
         <div className="app-workspace__surface">

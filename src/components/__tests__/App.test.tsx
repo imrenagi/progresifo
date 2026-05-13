@@ -80,6 +80,8 @@ function mockMatchMedia(matches: boolean) {
 
 describe("App", () => {
   beforeEach(() => {
+    window.localStorage.clear();
+    window.localStorage.setItem("progresifo.onboardingDismissed", "true");
     mocks.connectMidi.mockClear();
     mocks.disableAudio.mockClear();
     mocks.enableAudio.mockClear();
@@ -116,6 +118,57 @@ describe("App", () => {
 
     expect(screen.getByRole("heading", { name: "CM" })).toBeInTheDocument();
     expect(screen.getByText("C4 E4 G4")).toBeInTheDocument();
+  });
+
+  it("shows first-run onboarding and persists dismissal", () => {
+    window.localStorage.removeItem("progresifo.onboardingDismissed");
+
+    render(<App />);
+
+    const onboarding = screen.getByRole("dialog", {
+      name: "Welcome to Progresifo",
+    });
+
+    expect(onboarding).toBeInTheDocument();
+    expect(
+      within(onboarding).getByText("Connect your MIDI controller"),
+    ).toBeInTheDocument();
+    expect(
+      within(onboarding).getByText("Choose Hold or Latch"),
+    ).toBeInTheDocument();
+    expect(
+      within(onboarding).getByText("Control browser sound"),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-onboarding-target="interaction-mode"]'),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-onboarding-target="midi-status"]'),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-onboarding-target="sound-toggle"]'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      within(onboarding).getByRole("button", { name: "Start practicing" }),
+    );
+
+    expect(
+      screen.queryByRole("dialog", { name: "Welcome to Progresifo" }),
+    ).not.toBeInTheDocument();
+    expect(window.localStorage.getItem("progresifo.onboardingDismissed")).toBe(
+      "true",
+    );
+  });
+
+  it("skips onboarding after it has been dismissed", () => {
+    window.localStorage.setItem("progresifo.onboardingDismissed", "true");
+
+    render(<App />);
+
+    expect(
+      screen.queryByRole("dialog", { name: "Welcome to Progresifo" }),
+    ).not.toBeInTheDocument();
   });
 
   it("forms a mouse chord by latching clicked piano keys", () => {
