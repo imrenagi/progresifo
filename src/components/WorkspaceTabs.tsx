@@ -13,6 +13,7 @@ export function WorkspaceTabs({
   const tabRefs = useRef<Record<WorkspaceMode, HTMLButtonElement | null>>({
     progressions: null,
     "chord-construction": null,
+    scales: null,
   });
   const tabs: { label: string; panelId: string; tabId: string; workspace: WorkspaceMode }[] = [
     {
@@ -26,6 +27,12 @@ export function WorkspaceTabs({
       panelId: "workspace-panel-chord-construction",
       tabId: "workspace-tab-chord-construction",
       workspace: "chord-construction",
+    },
+    {
+      label: "Scales",
+      panelId: "workspace-panel-scales",
+      tabId: "workspace-tab-scales",
+      workspace: "scales",
     },
   ];
 

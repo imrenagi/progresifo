@@ -106,7 +106,8 @@ button {
 }
 
 .progression-controls__field select,
-.chord-construction__controls select {
+.chord-construction__controls select,
+.scale-learning__controls select {
   min-height: 2.375rem;
   border: 1px solid var(--border-strong);
   border-radius: 0.5rem;
@@ -777,13 +778,15 @@ button {
   color: var(--color-text);
 }
 
-.chord-construction {
+.chord-construction,
+.scale-learning {
   display: grid;
   gap: 0.875rem;
   min-width: 0;
 }
 
-.chord-construction__controls {
+.chord-construction__controls,
+.scale-learning__controls {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
@@ -795,7 +798,8 @@ button {
   background: rgba(22, 26, 29, 0.72);
 }
 
-.chord-construction__controls label {
+.chord-construction__controls label,
+.scale-learning__controls label {
   display: grid;
   flex: 1 1 8rem;
   gap: 0.25rem;
@@ -806,7 +810,8 @@ button {
   text-transform: uppercase;
 }
 
-.chord-construction__scale {
+.chord-construction__scale,
+.scale-learning__active-notes {
   flex: 999 1 12rem;
   margin: 0;
   color: var(--color-muted);
@@ -819,7 +824,9 @@ button {
 .chord-type-detail,
 .chord-detail,
 .chord-example-list,
-.chord-examples {
+.chord-examples,
+.scale-type-list,
+.scale-type-detail {
   min-width: 0;
   border: 1px solid var(--border-subtle);
   border-radius: 0.5rem;
@@ -833,7 +840,13 @@ button {
   gap: 1rem;
 }
 
-.chord-type-list__family + .chord-type-list__family {
+.scale-type-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.chord-type-list__family + .chord-type-list__family,
+.scale-type-list__family + .scale-type-list__family {
   margin-top: 0;
 }
 
@@ -842,7 +855,9 @@ button {
 .chord-type-detail__scale,
 .chord-detail__label,
 .chord-example-list__heading,
-.chord-examples__heading {
+.chord-examples__heading,
+.scale-type-list__family-heading,
+.scale-type-detail__scale {
   margin: 0;
   color: var(--color-muted);
   font-size: 0.68rem;
@@ -854,7 +869,8 @@ button {
 .chord-type-list__buttons,
 .chord-type-list__items,
 .chord-example-list__buttons,
-.chord-examples__grid {
+.chord-examples__grid,
+.scale-type-list__buttons {
   display: grid;
   gap: 0.45rem;
   margin-top: 0.55rem;
@@ -863,7 +879,8 @@ button {
 
 .chord-type-list__button,
 .chord-example-list__button,
-.chord-examples__button {
+.chord-examples__button,
+.scale-type-list__button {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -884,7 +901,9 @@ button {
 .chord-example-list__button:hover,
 .chord-example-list__button[data-selected="true"],
 .chord-examples__button:hover,
-.chord-examples__button[data-selected="true"] {
+.chord-examples__button[data-selected="true"],
+.scale-type-list__button:hover,
+.scale-type-list__button[data-selected="true"] {
   border-color: rgba(242, 184, 75, 0.55);
   background: rgba(242, 184, 75, 0.13);
 }
@@ -893,7 +912,9 @@ button {
 .chord-type-detail__facts dd,
 .chord-detail__facts dd,
 .chord-example-list__name,
-.chord-examples__button span:first-child {
+.chord-examples__button span:first-child,
+.scale-type-list__name,
+.scale-type-detail__facts dd {
   min-width: 0;
   font-weight: 800;
   overflow-wrap: anywhere;
@@ -903,7 +924,8 @@ button {
 .chord-example-list__notes,
 .chord-examples__button span:last-child,
 .chord-example-list__empty,
-.chord-examples__empty {
+.chord-examples__empty,
+.scale-type-list__formula {
   flex: 0 1 auto;
   min-width: 0;
   color: var(--color-muted);
@@ -913,13 +935,15 @@ button {
 }
 
 .chord-type-detail,
-.chord-detail {
+.chord-detail,
+.scale-type-detail {
   display: grid;
   gap: 0.875rem;
 }
 
 .chord-type-detail__header,
-.chord-detail__header {
+.chord-detail__header,
+.scale-type-detail__header {
   display: flex;
   align-items: start;
   justify-content: space-between;
@@ -928,7 +952,8 @@ button {
 }
 
 .chord-type-detail__header > div,
-.chord-detail__header > div {
+.chord-detail__header > div,
+.scale-type-detail__header > div {
   min-width: 0;
 }
 
@@ -945,12 +970,19 @@ button {
 .chord-detail__facts,
 .chord-detail__facts dd,
 .chord-example-list__empty,
-.chord-examples__empty {
+.chord-examples__empty,
+.scale-type-detail__heading,
+.scale-type-detail__notes,
+.scale-type-detail__section h3,
+.scale-type-detail__section p,
+.scale-type-detail__facts,
+.scale-type-detail__facts dd {
   margin: 0;
 }
 
 .chord-type-detail__heading,
-.chord-detail__heading {
+.chord-detail__heading,
+.scale-type-detail__heading {
   margin-top: 0.25rem;
   font-size: 1.45rem;
   line-height: 1.1;
@@ -958,7 +990,8 @@ button {
 }
 
 .chord-type-detail__name,
-.chord-detail__symbol {
+.chord-detail__symbol,
+.scale-type-detail__notes {
   margin-top: 0.25rem;
   color: var(--color-accent);
   font-size: 1.05rem;
@@ -967,7 +1000,8 @@ button {
 }
 
 .chord-type-detail__match,
-.chord-detail__match {
+.chord-detail__match,
+.scale-type-detail__match {
   flex: 0 1 auto;
   border-radius: 999px;
   padding: 0.25rem 0.55rem;
@@ -980,19 +1014,22 @@ button {
 }
 
 .chord-type-detail__match[data-matched="true"],
-.chord-detail__match[data-matched="true"] {
+.chord-detail__match[data-matched="true"],
+.scale-type-detail__match[data-matched="true"] {
   background: var(--color-teal-soft);
   color: var(--color-key-white-pressed);
 }
 
 .chord-type-detail__facts,
-.chord-detail__facts {
+.chord-detail__facts,
+.scale-type-detail__facts {
   display: grid;
   gap: 0.625rem;
 }
 
 .chord-type-detail__facts div,
-.chord-detail__facts div {
+.chord-detail__facts div,
+.scale-type-detail__facts div {
   display: grid;
   gap: 0.25rem;
   min-width: 0;
@@ -1001,7 +1038,9 @@ button {
 .chord-type-detail__facts dt,
 .chord-type-detail__section h3,
 .chord-detail__facts dt,
-.chord-detail__section h3 {
+.chord-detail__section h3,
+.scale-type-detail__facts dt,
+.scale-type-detail__section h3 {
   color: var(--color-muted);
   font-size: 0.68rem;
   font-weight: 700;
@@ -1010,7 +1049,8 @@ button {
 }
 
 .chord-type-detail__section,
-.chord-detail__section {
+.chord-detail__section,
+.scale-type-detail__section {
   display: grid;
   gap: 0.35rem;
   min-width: 0;
@@ -1018,7 +1058,8 @@ button {
 
 .chord-type-detail__section p,
 .chord-detail__section p,
-.chord-detail__examples {
+.chord-detail__examples,
+.scale-type-detail__section p {
   color: var(--color-muted);
   font-size: 0.88rem;
   line-height: 1.45;
@@ -1052,6 +1093,8 @@ button {
 .chord-type-list,
 .chord-type-detail,
 .chord-example-list,
+.scale-type-list,
+.scale-type-detail,
 .progression-practice__browser,
 .progression-practice__rail {
   scrollbar-color: rgba(247, 246, 239, 0.32) transparent;
@@ -1061,6 +1104,8 @@ button {
 .chord-type-list::-webkit-scrollbar,
 .chord-type-detail::-webkit-scrollbar,
 .chord-example-list::-webkit-scrollbar,
+.scale-type-list::-webkit-scrollbar,
+.scale-type-detail::-webkit-scrollbar,
 .progression-practice__browser::-webkit-scrollbar,
 .progression-practice__rail::-webkit-scrollbar {
   width: 0.45rem;
@@ -1069,10 +1114,127 @@ button {
 .chord-type-list::-webkit-scrollbar-thumb,
 .chord-type-detail::-webkit-scrollbar-thumb,
 .chord-example-list::-webkit-scrollbar-thumb,
+.scale-type-list::-webkit-scrollbar-thumb,
+.scale-type-detail::-webkit-scrollbar-thumb,
 .progression-practice__browser::-webkit-scrollbar-thumb,
 .progression-practice__rail::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: rgba(247, 246, 239, 0.28);
+}
+
+.mini-piano-map {
+  position: relative;
+  height: 100%;
+  min-height: 7.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(243, 245, 241, 0.14);
+  border-radius: 0.5rem;
+  background: rgba(10, 12, 13, 0.52);
+}
+
+.mini-piano-map__white-keys {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  height: 100%;
+}
+
+.mini-piano-map__black-keys {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.mini-piano-map__key {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 0.15rem 0.45rem;
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+.mini-piano-map__key--white {
+  min-height: 100%;
+  border-right: 1px solid rgba(15, 17, 19, 0.32);
+  background: linear-gradient(180deg, #fffaf0 0%, var(--color-key-white) 100%);
+  color: #303336;
+}
+
+.mini-piano-map__key--white:last-child {
+  border-right: 0;
+}
+
+.mini-piano-map__key--black {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  min-height: 0;
+  height: 62%;
+  border: 1px solid rgba(242, 184, 75, 0.2);
+  border-top: 0;
+  border-radius: 0 0 0.18rem 0.18rem;
+  background: linear-gradient(180deg, #2a2d31 0%, var(--color-key-black) 100%);
+}
+
+.mini-piano-map__key[data-highlighted="true"] {
+  box-shadow: inset 0 0 0 3px rgba(242, 184, 75, 0.78);
+}
+
+.mini-piano-map__key--black[data-highlighted="true"] {
+  box-shadow: inset 0 0 0 2px rgba(242, 184, 75, 0.86);
+}
+
+.scale-staff {
+  position: relative;
+  display: grid;
+  align-items: center;
+  width: 100%;
+  min-height: 7.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(243, 245, 241, 0.14);
+  border-radius: 0.5rem;
+  background: rgba(247, 246, 239, 0.045);
+}
+
+.scale-staff__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.scale-staff__engraving {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.scale-staff__engraving svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.scale-staff__engraving svg path,
+.scale-staff__engraving svg line,
+.scale-staff__engraving svg rect {
+  stroke: rgba(247, 246, 239, 0.76);
+}
+
+.scale-staff__engraving svg .vf-stavenote *,
+.scale-staff__engraving svg .vf-clef *,
+.scale-staff__engraving svg .vf-accidental * {
+  fill: var(--color-accent) !important;
+  stroke: var(--color-accent) !important;
+}
+
+.scale-type-detail__visuals {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .piano-shell {
@@ -1178,16 +1340,19 @@ button {
 }
 
 @media (min-width: 58rem) {
-  .chord-construction {
+  .chord-construction,
+  .scale-learning {
     grid-template-columns: minmax(14rem, 0.8fr) minmax(0, 1.6fr);
     align-items: start;
   }
 
-  .chord-construction__controls {
+  .chord-construction__controls,
+  .scale-learning__controls {
     grid-column: 1 / -1;
   }
 
-  .chord-type-list {
+  .chord-type-list,
+  .scale-type-list {
     grid-row: span 2;
     max-height: calc(100vh - 17rem);
     overflow-y: auto;
@@ -1312,22 +1477,35 @@ button {
 }
 
 @media (min-width: 72rem) {
-  .chord-construction {
+  .chord-construction,
+  .scale-learning {
     grid-template-columns: minmax(15rem, 0.72fr) minmax(0, 1.35fr) minmax(17rem, 0.85fr);
     grid-template-rows: auto minmax(0, auto);
   }
 
-  .chord-construction__controls {
+  .chord-construction__controls,
+  .scale-learning__controls {
     grid-column: 1 / -1;
     padding: 0.625rem 0.75rem;
   }
 
-  .chord-type-list {
+  .chord-type-list,
+  .scale-type-list {
     grid-column: 1;
   }
 
-  .chord-type-detail {
+  .chord-type-detail,
+  .scale-type-detail {
     grid-column: 2;
+  }
+
+  .scale-learning .scale-type-detail {
+    grid-column: 2 / -1;
+  }
+
+  .scale-type-detail__visuals {
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.85fr);
+    align-items: stretch;
   }
 
   .chord-example-list {
@@ -1336,9 +1514,16 @@ button {
 
   .chord-type-list,
   .chord-type-detail,
-  .chord-example-list {
+  .chord-example-list,
+  .scale-type-list,
+  .scale-type-detail {
     max-height: clamp(15rem, 36vh, 24rem);
     overflow-y: auto;
+  }
+
+  .scale-type-list,
+  .scale-type-detail {
+    max-height: clamp(20rem, 48vh, 30rem);
   }
 }
 

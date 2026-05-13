@@ -8,6 +8,7 @@ import { PianoKeyboard } from "./components/PianoKeyboard";
 import { ProgressionCompass } from "./components/ProgressionCompass";
 import { ProgressionPracticeRail } from "./components/ProgressionPracticeRail";
 import { ProgressionTrail } from "./components/ProgressionTrail";
+import { ScaleLearningPanel } from "./components/ScaleLearningPanel";
 import { StatusBar } from "./components/StatusBar";
 import { WorkspaceTabs } from "./components/WorkspaceTabs";
 import { useMidiInput } from "./midi/useMidiInput";
@@ -163,6 +164,9 @@ export default function App() {
     chordConstructionHintedMidiNumbers,
     setChordConstructionHintedMidiNumbers,
   ] = useState<number[]>([]);
+  const [scaleHintedMidiNumbers, setScaleHintedMidiNumbers] = useState<
+    number[]
+  >([]);
   const [interactionMode, setInteractionMode] =
     useState<PianoInteractionMode>("hold");
   const [progression, setProgression] = useState<ProgressionEntry[]>([]);
@@ -448,6 +452,8 @@ export default function App() {
   const hintedMidiNumbers =
     activeWorkspace === "chord-construction"
       ? chordConstructionHintedMidiNumbers
+      : activeWorkspace === "scales"
+        ? scaleHintedMidiNumbers
       : progressionHintedMidiNumbers;
 
   const handleCompassSuggestionSelect = useCallback(
@@ -1035,6 +1041,21 @@ export default function App() {
                   appKeyMode={keyMode}
                   appKeyRoot={progressionKey}
                   onTargetChange={setChordConstructionHintedMidiNumbers}
+                  targetRange={range}
+                />
+              ) : null}
+            </div>
+            <div
+              aria-labelledby="workspace-tab-scales"
+              hidden={activeWorkspace !== "scales"}
+              id="workspace-panel-scales"
+              role="tabpanel"
+            >
+              {activeWorkspace === "scales" ? (
+                <ScaleLearningPanel
+                  activePitchClasses={detection.pitchClasses}
+                  appKeyRoot={progressionKey}
+                  onTargetChange={setScaleHintedMidiNumbers}
                   targetRange={range}
                 />
               ) : null}

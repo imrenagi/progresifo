@@ -439,13 +439,14 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "I (C)" })).toBeInTheDocument();
   });
 
-  it("switches between progressions and chord construction workspaces", () => {
+  it("switches between progressions, chord construction, and scale workspaces", () => {
     render(<App />);
 
     const progressionsTab = screen.getByRole("tab", { name: "Progressions" });
     const chordConstructionTab = screen.getByRole("tab", {
       name: "Chord Construction",
     });
+    const scalesTab = screen.getByRole("tab", { name: "Scales" });
     expect(progressionsTab).toHaveAttribute("id", "workspace-tab-progressions");
     expect(progressionsTab).toHaveAttribute(
       "aria-controls",
@@ -459,6 +460,11 @@ describe("App", () => {
       "aria-controls",
       "workspace-panel-chord-construction",
     );
+    expect(scalesTab).toHaveAttribute("id", "workspace-tab-scales");
+    expect(scalesTab).toHaveAttribute(
+      "aria-controls",
+      "workspace-panel-scales",
+    );
     expect(
       document.getElementById(progressionsTab.getAttribute("aria-controls") ?? ""),
     ).toBeInTheDocument();
@@ -466,6 +472,9 @@ describe("App", () => {
       document.getElementById(
         chordConstructionTab.getAttribute("aria-controls") ?? "",
       ),
+    ).toBeInTheDocument();
+    expect(
+      document.getElementById(scalesTab.getAttribute("aria-controls") ?? ""),
     ).toBeInTheDocument();
     expect(screen.getByRole("tabpanel")).toHaveAttribute(
       "aria-labelledby",
@@ -491,6 +500,19 @@ describe("App", () => {
       screen.queryByRole("region", { name: "Recent progression" }),
     ).not.toBeInTheDocument();
 
+    fireEvent.click(scalesTab);
+
+    expect(screen.getByRole("tabpanel")).toHaveAttribute(
+      "aria-labelledby",
+      "workspace-tab-scales",
+    );
+    expect(
+      screen.getByRole("region", { name: "Scale learning" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Chord construction" }),
+    ).not.toBeInTheDocument();
+
     fireEvent.click(progressionsTab);
 
     expect(
@@ -505,9 +527,11 @@ describe("App", () => {
     const chordConstructionTab = screen.getByRole("tab", {
       name: "Chord Construction",
     });
+    const scalesTab = screen.getByRole("tab", { name: "Scales" });
 
     expect(progressionsTab).toHaveAttribute("tabIndex", "0");
     expect(chordConstructionTab).toHaveAttribute("tabIndex", "-1");
+    expect(scalesTab).toHaveAttribute("tabIndex", "-1");
 
     progressionsTab.focus();
     fireEvent.keyDown(progressionsTab, { key: "ArrowRight" });
@@ -531,21 +555,26 @@ describe("App", () => {
     expect(chordConstructionTab).toHaveFocus();
     expect(chordConstructionTab).toHaveAttribute("aria-selected", "true");
 
-    const arrowUpEvent = createEvent.keyDown(chordConstructionTab, {
+    fireEvent.keyDown(chordConstructionTab, { key: "ArrowRight" });
+
+    expect(scalesTab).toHaveFocus();
+    expect(scalesTab).toHaveAttribute("aria-selected", "true");
+
+    const arrowUpEvent = createEvent.keyDown(scalesTab, {
       key: "ArrowUp",
     });
-    fireEvent(chordConstructionTab, arrowUpEvent);
+    fireEvent(scalesTab, arrowUpEvent);
 
     expect(arrowUpEvent.defaultPrevented).toBe(true);
-    expect(progressionsTab).toHaveFocus();
-    expect(progressionsTab).toHaveAttribute("aria-selected", "true");
-
-    fireEvent.keyDown(progressionsTab, { key: "End" });
-
     expect(chordConstructionTab).toHaveFocus();
     expect(chordConstructionTab).toHaveAttribute("aria-selected", "true");
 
-    fireEvent.keyDown(chordConstructionTab, { key: "Home" });
+    fireEvent.keyDown(progressionsTab, { key: "End" });
+
+    expect(scalesTab).toHaveFocus();
+    expect(scalesTab).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.keyDown(scalesTab, { key: "Home" });
 
     expect(progressionsTab).toHaveFocus();
     expect(progressionsTab).toHaveAttribute("aria-selected", "true");
@@ -778,6 +807,82 @@ describe("App", () => {
         expect(["D3", "F3", "G3", "B3"]).toContain(noteName);
       }
     });
+  });
+
+  it("uses scale targets as piano hints and confirms matches", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Scales" }));
+    fireEvent.click(screen.getByRole("button", { name: "Minor pentatonic" }));
+
+    expect(screen.getByRole("button", { name: "C4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "D#4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "F4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "G4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "A#4" })).toHaveAttribute(
+      "data-hinted",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "E4" })).toHaveAttribute(
+      "data-hinted",
+      "false",
+    );
+
+    fireEvent.pointerDown(screen.getByRole("button", { name: "C4" }), {
+      pointerId: 1,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "D#4" }), {
+      pointerId: 2,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "F4" }), {
+      pointerId: 3,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "G4" }), {
+      pointerId: 4,
+    });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "A#4" }), {
+      pointerId: 5,
+    });
+
+    expect(screen.getByText("Matched")).toBeInTheDocument();
+  });
+
+  it("does not add scale practice notes to progression state", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Scales" }));
+
+    ["C4", "D4", "E4", "F4", "G4", "A4", "B4"].forEach((noteName, index) => {
+      fireEvent.pointerDown(screen.getByRole("button", { name: noteName }), {
+        pointerId: index + 1,
+      });
+    });
+
+    expect(screen.getByText("Matched")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Progressions" }));
+
+    const recentProgression = within(
+      screen.getByRole("region", { name: "Recent progression" }),
+    );
+    expect(
+      recentProgression.getByText("Detected chords will appear here."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Choose a first chord" }),
+    ).toBeInTheDocument();
   });
 
   it("toggles from next moves to full progressions", () => {

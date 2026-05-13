@@ -18,7 +18,8 @@
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "tonal": "6.4.3",
-    "tone": "15.1.22"
+    "tone": "15.1.22",
+    "vexflow": "^5.0.0"
   },
   "devDependencies": {
     "@semantic-release/git": "10.0.1",
