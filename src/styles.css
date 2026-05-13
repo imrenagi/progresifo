@@ -1504,7 +1504,7 @@ button {
   }
 
   .scale-type-detail__visuals {
-    grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.85fr);
+    grid-template-columns: minmax(13rem, 0.52fr) minmax(18rem, 1.48fr);
     align-items: stretch;
   }
 
