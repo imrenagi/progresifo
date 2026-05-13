@@ -44,7 +44,43 @@ export type KeyMode = "major" | "minor";
 
 export type ProgressionDisplayMode = "next-moves" | "full-progressions";
 
-export type WorkspaceMode = "progressions" | "chord-construction";
+export type WorkspaceMode = "progressions" | "chord-construction" | "scales";
+
+export type ScaleFamily = "core" | "pentatonic-blues" | "modes" | "symmetric";
+
+export type ScaleGenre =
+  | "pop"
+  | "classical"
+  | "jazz"
+  | "blues"
+  | "funk"
+  | "rock"
+  | "film";
+
+export type ScaleType = {
+  readonly id: string;
+  readonly family: ScaleFamily;
+  readonly name: string;
+  readonly intervals: readonly number[];
+  readonly formula: string;
+  readonly steps: string;
+  readonly description: string;
+  readonly usage: string;
+  readonly genres: readonly ScaleGenre[];
+};
+
+export type ScaleTarget = {
+  readonly noteNames: string[];
+  readonly pitchClasses: string[];
+  readonly midiNumbers: number[];
+};
+
+export type ScaleStaffNote = {
+  readonly noteName: string;
+  readonly pitchClass: string;
+  readonly octave: number;
+  readonly staffStep: number;
+};
 
 export type ChordFamily =
   | "triads"
