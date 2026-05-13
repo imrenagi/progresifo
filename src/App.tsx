@@ -855,140 +855,156 @@ export default function App() {
       />
 
       <section className="app-workspace" aria-label="Piano chord learning">
-        <div className="app-workspace__readout">
-          <WorkspaceTabs
-            activeWorkspace={activeWorkspace}
-            onWorkspaceChange={setActiveWorkspace}
-          />
-          <div
-            aria-labelledby="workspace-tab-progressions"
-            hidden={activeWorkspace !== "progressions"}
-            id="workspace-panel-progressions"
-            role="tabpanel"
-          >
+        <div className="app-workspace__surface">
+          <div className="app-workspace__header">
+            <WorkspaceTabs
+              activeWorkspace={activeWorkspace}
+              onWorkspaceChange={setActiveWorkspace}
+            />
             {activeWorkspace === "progressions" ? (
-              <>
-              <section
-                className="progression-controls"
-                aria-label="Progression settings"
-              >
-                <label className="progression-controls__field">
-                  <span>Genre</span>
-                  <select
-                    aria-label="Progression genre"
-                    value={progressionGenre}
-                    onChange={(event) => {
-                      const nextGenre = event.target.value as ProgressionGenre;
-
-                      resetCompass();
-                      resetProgressionPractice(nextGenre, keyMode);
-                      setProgressionGenre(nextGenre);
-                    }}
-                  >
-                    {PROGRESSION_GENRES.map((genre) => (
-                      <option key={genre} value={genre}>
-                        {genreLabel(genre)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="progression-controls__field">
-                  <span>Key</span>
-                  <select
-                    aria-label="Progression key"
-                    value={progressionKey}
-                    onChange={(event) => {
-                      resetCompass();
-                      resetProgressionPractice(progressionGenre, keyMode);
-                      setProgressionKey(event.target.value);
-                    }}
-                  >
-                    {KEY_ROOTS.map((keyRoot) => (
-                      <option key={keyRoot} value={keyRoot}>
-                        {keyRoot}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="progression-controls__field">
-                  <span>Mode</span>
-                  <select
-                    aria-label="Key mode"
-                    value={keyMode}
-                    onChange={(event) => {
-                      const nextKeyMode = event.target.value as KeyMode;
-
-                      resetCompass();
-                      resetProgressionPractice(progressionGenre, nextKeyMode);
-                      setKeyMode(nextKeyMode);
-                    }}
-                  >
-                    <option value="major">Major</option>
-                    <option value="minor">Minor</option>
-                  </select>
-                </label>
-              </section>
-              <div
-                className="progression-mode-toggle"
-                aria-label="Progression display mode"
-                role="group"
-              >
-                <button
-                  aria-pressed={progressionDisplayMode === "next-moves"}
-                  onClick={() => setProgressionDisplayMode("next-moves")}
-                  type="button"
+              <div className="app-workspace__controls">
+                <section
+                  className="progression-controls"
+                  aria-label="Progression settings"
                 >
-                  Next moves
-                </button>
-                <button
-                  aria-pressed={progressionDisplayMode === "full-progressions"}
-                  onClick={() =>
-                    setProgressionDisplayMode("full-progressions")
-                  }
-                  type="button"
+                  <label className="progression-controls__field">
+                    <span>Genre</span>
+                    <select
+                      aria-label="Progression genre"
+                      value={progressionGenre}
+                      onChange={(event) => {
+                        const nextGenre = event.target
+                          .value as ProgressionGenre;
+
+                        resetCompass();
+                        resetProgressionPractice(nextGenre, keyMode);
+                        setProgressionGenre(nextGenre);
+                      }}
+                    >
+                      {PROGRESSION_GENRES.map((genre) => (
+                        <option key={genre} value={genre}>
+                          {genreLabel(genre)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="progression-controls__field">
+                    <span>Key</span>
+                    <select
+                      aria-label="Progression key"
+                      value={progressionKey}
+                      onChange={(event) => {
+                        resetCompass();
+                        resetProgressionPractice(progressionGenre, keyMode);
+                        setProgressionKey(event.target.value);
+                      }}
+                    >
+                      {KEY_ROOTS.map((keyRoot) => (
+                        <option key={keyRoot} value={keyRoot}>
+                          {keyRoot}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="progression-controls__field">
+                    <span>Mode</span>
+                    <select
+                      aria-label="Key mode"
+                      value={keyMode}
+                      onChange={(event) => {
+                        const nextKeyMode = event.target.value as KeyMode;
+
+                        resetCompass();
+                        resetProgressionPractice(progressionGenre, nextKeyMode);
+                        setKeyMode(nextKeyMode);
+                      }}
+                    >
+                      <option value="major">Major</option>
+                      <option value="minor">Minor</option>
+                    </select>
+                  </label>
+                </section>
+                <div
+                  className="progression-mode-toggle"
+                  aria-label="Progression display mode"
+                  role="group"
                 >
-                  Full progressions
-                </button>
+                  <button
+                    aria-pressed={progressionDisplayMode === "next-moves"}
+                    onClick={() => setProgressionDisplayMode("next-moves")}
+                    type="button"
+                  >
+                    Next moves
+                  </button>
+                  <button
+                    aria-pressed={
+                      progressionDisplayMode === "full-progressions"
+                    }
+                    onClick={() =>
+                      setProgressionDisplayMode("full-progressions")
+                    }
+                    type="button"
+                  >
+                    Full progressions
+                  </button>
+                </div>
               </div>
-              <ChordReadout detection={detection} displayNotes={displayNotes} />
-              {progressionDisplayMode === "next-moves" ? (
-                <ProgressionCompass
-                  currentNode={displayedCompassNode}
-                  matchedSuggestionId={matchedSuggestionId}
-                  onSuggestionSelect={handleCompassSuggestionSelect}
-                  selectedSuggestionId={selectedSuggestion?.id ?? null}
-                  suggestions={compassSuggestions}
-                />
-              ) : (
-                <ProgressionPracticeRail
-                  activeStepIndex={activeProgressionStepIndex}
-                  isComplete={isProgressionComplete}
-                  matchedStepIndex={matchedProgressionStepIndex}
-                  onProgressionSelect={handleProgressionSelect}
-                  onStepSelect={handleProgressionStepSelect}
-                  progressions={resolvedProgressions}
-                  selectedProgression={selectedProgression}
-                />
-              )}
-              <ProgressionTrail entries={progression} />
-            </>
             ) : null}
           </div>
-          <div
-            aria-labelledby="workspace-tab-chord-construction"
-            hidden={activeWorkspace !== "chord-construction"}
-            id="workspace-panel-chord-construction"
-            role="tabpanel"
-          >
-            {activeWorkspace === "chord-construction" ? (
-              <ChordConstructionPanel
-                activePitchClasses={detection.pitchClasses}
-                appKeyMode={keyMode}
-                appKeyRoot={progressionKey}
-                onTargetChange={setChordConstructionHintedMidiNumbers}
-                targetRange={range}
-              />
-            ) : null}
+          <div className="app-workspace__readout">
+            <div
+              aria-labelledby="workspace-tab-progressions"
+              hidden={activeWorkspace !== "progressions"}
+              id="workspace-panel-progressions"
+              role="tabpanel"
+            >
+              {activeWorkspace === "progressions" ? (
+                <div className="progression-workspace">
+                  <ChordReadout
+                    detection={detection}
+                    displayNotes={displayNotes}
+                  />
+                  <div className="progression-workspace__guidance">
+                    {progressionDisplayMode === "next-moves" ? (
+                      <ProgressionCompass
+                        currentNode={displayedCompassNode}
+                        matchedSuggestionId={matchedSuggestionId}
+                        onSuggestionSelect={handleCompassSuggestionSelect}
+                        selectedSuggestionId={selectedSuggestion?.id ?? null}
+                        suggestions={compassSuggestions}
+                      />
+                    ) : (
+                      <ProgressionPracticeRail
+                        activeStepIndex={activeProgressionStepIndex}
+                        isComplete={isProgressionComplete}
+                        matchedStepIndex={matchedProgressionStepIndex}
+                        onProgressionSelect={handleProgressionSelect}
+                        onStepSelect={handleProgressionStepSelect}
+                        progressions={resolvedProgressions}
+                        selectedProgression={selectedProgression}
+                      />
+                    )}
+                    <ProgressionTrail entries={progression} />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <div
+              aria-labelledby="workspace-tab-chord-construction"
+              hidden={activeWorkspace !== "chord-construction"}
+              id="workspace-panel-chord-construction"
+              role="tabpanel"
+            >
+              {activeWorkspace === "chord-construction" ? (
+                <ChordConstructionPanel
+                  activePitchClasses={detection.pitchClasses}
+                  appKeyMode={keyMode}
+                  appKeyRoot={progressionKey}
+                  onTargetChange={setChordConstructionHintedMidiNumbers}
+                  targetRange={range}
+                />
+              ) : null}
+            </div>
           </div>
         </div>
 
